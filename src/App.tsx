@@ -22,7 +22,7 @@ alignItems: "center",
     padding: 30,
     borderRadius: 20,
     width: 320,
-    textAlign: "center",
+    textAlign: "center"as const,
    
   };
 
