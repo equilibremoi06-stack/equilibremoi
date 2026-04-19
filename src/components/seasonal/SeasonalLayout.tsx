@@ -10,11 +10,11 @@ export function SeasonalLayout({ children }: Props) {
   const theme = useSeasonalThemeContext();
 
   return (
-    <>
+    <div className="seasonal-app-shell">
       <SeasonalAnimation />
       <SeasonalDecor theme={theme} />
+      <div className="seasonal-app-shell-content">{children}</div>
       <SeasonalBrandMark theme={theme} />
-      <div className="seasonal-app-shell">{children}</div>
-    </>
+    </div>
   );
 }

@@ -17,7 +17,6 @@ type Particle = {
   duration: number;
   delay: number;
   drift: number;
-  opacity: number;
   variant: number;
 };
 
@@ -57,7 +56,7 @@ export function getCurrentAnimationTheme(date = new Date()): ThemeAnimation {
 
 function createParticles(theme: ThemeAnimation): Particle[] {
   const counts: Record<ThemeAnimation, number> = {
-    spring: 10,
+    spring: 9,
     summer: 9,
     autumn: 8,
     winter: 12,
@@ -68,31 +67,46 @@ function createParticles(theme: ThemeAnimation): Particle[] {
 
   const count = counts[theme];
 
-  return Array.from({ length: count }, (_, index) => ({
-    id: index,
-    left: Math.random() * 100,
-    size:
-      theme === 'winter' || theme === 'christmas'
-        ? 4 + Math.random() * 5
-        : theme === 'summer'
-          ? 6 + Math.random() * 8
-          : 8 + Math.random() * 8,
-    duration:
-      theme === 'summer'
-        ? 4 + Math.random() * 4
-        : theme === 'valentine'
-          ? 7 + Math.random() * 4
-          : 9 + Math.random() * 6,
-    delay: Math.random() * 6,
-    drift: (Math.random() - 0.5) * 80,
-    opacity:
-      theme === 'summer'
-        ? 0.25 + Math.random() * 0.2
-        : theme === 'winter' || theme === 'christmas'
-          ? 0.35 + Math.random() * 0.25
-          : 0.28 + Math.random() * 0.22,
-    variant: Math.floor(Math.random() * 3),
-  }));
+  return Array.from({ length: count }, (_, index) => {
+    let size: number;
+    let duration: number;
+    let delay: number;
+    const drift = (Math.random() - 0.5) * 80;
+
+    if (theme === 'spring') {
+      size = 10 + Math.random() * 4;
+      duration = 20 + Math.random() * 12;
+      delay = Math.random() * 2;
+    } else if (theme === 'winter' || theme === 'christmas') {
+      size = 4 + Math.random() * 5;
+      duration =
+        theme === 'christmas' ? 11 + Math.random() * 8 : 12 + Math.random() * 8;
+      delay = Math.random() * 4;
+    } else if (theme === 'summer') {
+      size = 6 + Math.random() * 8;
+      duration = 4 + Math.random() * 4;
+      delay = Math.random() * 4;
+    } else if (theme === 'valentine') {
+      size = 10 + Math.random() * 4;
+      duration = 7 + Math.random() * 4;
+      delay = Math.random() * 3;
+    } else {
+      size = 8 + Math.random() * 8;
+      duration =
+        theme === 'halloween' ? 8 + Math.random() * 6 : 9 + Math.random() * 6;
+      delay = Math.random() * 5;
+    }
+
+    return {
+      id: index,
+      left: Math.random() * 100,
+      size,
+      duration,
+      delay,
+      drift,
+      variant: Math.floor(Math.random() * 3),
+    };
+  });
 }
 
 const themeClassMap: Record<ThemeAnimation, keyof typeof styles> = {
@@ -133,7 +147,6 @@ export default function SeasonalAnimation() {
               height: `${particle.size}px`,
               animationDuration: `${particle.duration}s`,
               animationDelay: `${particle.delay}s`,
-              opacity: particle.opacity,
               '--drift': `${particle.drift}px`,
             } as CSSProperties
           }

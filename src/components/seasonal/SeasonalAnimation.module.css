@@ -15,26 +15,31 @@
 /* ---------------- SPRING ---------------- */
 
 .spring .particle {
-  top: -10%;
+  top: -8%;
   border-radius: 60% 40% 60% 40%;
-  background: linear-gradient(135deg, #f9c5d1, #ffffff);
+  background: linear-gradient(145deg, #fbc9d4 0%, #ffffff 55%, #fce3ea 100%);
+  box-shadow: 0 1px 3px rgba(232, 150, 170, 0.35);
   animation: springFall linear infinite;
-  filter: blur(0.2px);
+  filter: blur(0.15px);
 }
 
 @keyframes springFall {
   0% {
-    transform: translate3d(0, -5vh, 0) rotate(0deg);
-    opacity: 0;
+    transform: translate3d(0, -4vh, 0) rotate(0deg);
+    opacity: 0.55;
   }
-  10% {
-    opacity: 0.45;
+  8% {
+    opacity: 0.72;
   }
   50% {
-    transform: translate3d(calc(var(--drift) * 0.5), 50vh, 0) rotate(140deg);
+    transform: translate3d(calc(var(--drift) * 0.55), 52vh, 0) rotate(155deg);
+    opacity: 0.68;
+  }
+  92% {
+    opacity: 0.55;
   }
   100% {
-    transform: translate3d(var(--drift), 110vh, 0) rotate(280deg);
+    transform: translate3d(var(--drift), 115vh, 0) rotate(300deg);
     opacity: 0;
   }
 }

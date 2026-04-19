@@ -5,8 +5,22 @@
 
 .seasonal-app-shell {
   position: relative;
-  z-index: 1;
+  isolation: isolate;
+  flex: 1;
   min-height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contenu au-dessus des calques fixed (animation / déco), sans bloquer les clics */
+.seasonal-app-shell-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .seasonal-decor {
