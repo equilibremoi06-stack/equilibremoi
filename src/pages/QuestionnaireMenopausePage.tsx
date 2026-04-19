@@ -1,139 +1,150 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { MedicalDisclaimer } from '../components/medical/MedicalDisclaimer';
 import { saveMenopauseFlags } from '../lib/healthProfileStorage';
 import {
-  boneHealthContent,
-  hotFlashesContent,
   menopauseDisclaimers,
   menopauseFoodsOrHabitsToModerate,
   menopauseFoodsToFavor,
   menopauseNutritionGeneral,
-  menopauseSymptomsHandled,
-  moodFatigueContent,
   MENOPAUSE_MEDICAL_REDIRECT,
-  sleepContent,
-  weightGlycemicContent,
 } from '../lib/menopauseContent';
 import styles from './QuestionnaireMenopausePage.module.css';
 
+const MINI_CARDS = [
+  {
+    accent: '🌸',
+    title: 'Bouffées de chaleur',
+    lines: [
+      'Hydratation et repas simples, à ton rythme.',
+      'Observer ce qui t’apaise — sans te restreindre.',
+    ],
+  },
+  {
+    accent: '🌙',
+    title: 'Sommeil',
+    lines: [
+      'Soirée plus légère si tu le souhaites.',
+      'Moins d’excitants en fin de journée, si ça t’aide.',
+    ],
+  },
+  {
+    accent: '💗',
+    title: 'Humeur & fatigue',
+    lines: [
+      'Régularité des repas, petits plaisirs autorisés.',
+      'Ton corps mérite douceur, pas de performance.',
+    ],
+  },
+  {
+    accent: '✨',
+    title: 'Équilibre glycémique & ventre',
+    lines: [
+      'Repas structurés, aliments peu transformés.',
+      'Stabilité douce plutôt que contrôle strict.',
+    ],
+  },
+] as const;
+
 export default function QuestionnaireMenopausePage() {
+  const navigate = useNavigate();
+  const [showDetail, setShowDetail] = useState(false);
+
   useEffect(() => {
     saveMenopauseFlags(['parcours_menopause']);
   }, []);
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.card}>
-        <h1 className={styles.title}>Parcours Ménopause</h1>
-        <p className={styles.lead}>
-          Un cadre bienveillant pour parler alimentation et confort au quotidien — sans
-          promesse miracle, sans prescription. Si tu suis un traitement ou si un
-          symptôme t’inquiète, ton professionnel de santé reste la référence.
-        </p>
+      <div className={styles.inner}>
+        <header className={styles.header}>
+          <p className={styles.kicker}>Parcours Ménopause</p>
+          <h1 className={styles.title}>Douceur & clarté pour cette étape</h1>
+          <p className={styles.lead}>
+            Un accompagnement bien-être pour t’inspirer au quotidien — jamais une
+            promesse médicale. Ton médecin ou ta sage-femme restent tes repères si un
+            symptôme t’inquiète.
+          </p>
+        </header>
 
-        <div className={styles.alert} role="status">
-          <strong>Important</strong>
-          <p>{MENOPAUSE_MEDICAL_REDIRECT}</p>
+        <div className={styles.safety} role="status">
+          <span className={styles.safetyIcon} aria-hidden>
+            ✦
+          </span>
+          <div>
+            <span className={styles.safetyLabel}>Sécurité</span>
+            <p className={styles.safetyText}>{MENOPAUSE_MEDICAL_REDIRECT}</p>
+          </div>
         </div>
 
-        <section className={styles.section}>
-          <h2 className={styles.h2}>Symptômes pris en charge (approche douce)</h2>
-          <ul className={styles.bullets}>
-            {menopauseSymptomsHandled.map((s) => (
-              <li key={s}>{s}</li>
-            ))}
-          </ul>
-        </section>
+        <div className={styles.grid}>
+          {MINI_CARDS.map((c) => (
+            <article key={c.title} className={styles.miniCard}>
+              <span className={styles.miniAccent} aria-hidden>
+                {c.accent}
+              </span>
+              <h2 className={styles.miniTitle}>{c.title}</h2>
+              {c.lines.map((line) => (
+                <p key={line} className={styles.miniLine}>
+                  {line}
+                </p>
+              ))}
+            </article>
+          ))}
+        </div>
 
-        <section className={styles.section}>
-          <h2 className={styles.h2}>{menopauseNutritionGeneral.title}</h2>
-          <ul className={styles.bullets}>
-            {menopauseNutritionGeneral.lines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </section>
+        <div className={styles.ctaBlock}>
+          <button
+            type="button"
+            className={styles.cta}
+            onClick={() => navigate('/questionnaire-classique')}
+          >
+            Continuer vers mon parcours
+          </button>
+          <button
+            type="button"
+            className={styles.linkDetail}
+            onClick={() => setShowDetail((v) => !v)}
+            aria-expanded={showDetail}
+          >
+            {showDetail ? 'Masquer le détail' : 'Voir le détail du cadre nutritionnel'}
+          </button>
+        </div>
 
-        <section className={styles.section}>
-          <h2 className={styles.h2}>{hotFlashesContent.title}</h2>
-          <ul className={styles.bullets}>
-            {hotFlashesContent.prudentTips.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-          <p className={styles.note}>{hotFlashesContent.soyNote}</p>
-          <p className={styles.quote}>{hotFlashesContent.aiToneExample}</p>
-        </section>
+        {showDetail ? (
+          <section className={styles.detail}>
+            <h3 className={styles.detailTitle}>{menopauseNutritionGeneral.title}</h3>
+            <ul className={styles.detailList}>
+              {menopauseNutritionGeneral.lines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <h3 className={styles.detailTitle}>À privilégier (général)</h3>
+            <ul className={styles.detailList}>
+              {menopauseFoodsToFavor.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+            <h3 className={styles.detailTitle}>À modérer selon tolérance</h3>
+            <ul className={styles.detailList}>
+              {menopauseFoodsOrHabitsToModerate.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+            <h3 className={styles.detailTitle}>Rappels responsables</h3>
+            <ul className={styles.detailList}>
+              {menopauseDisclaimers.map((d) => (
+                <li key={d}>{d}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
-        <section className={styles.section}>
-          <h2 className={styles.h2}>{boneHealthContent.title}</h2>
-          <ul className={styles.bullets}>
-            {boneHealthContent.tips.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-          <p className={styles.message}>{boneHealthContent.message}</p>
-        </section>
+        <div className={styles.disclaimerWrap}>
+          <MedicalDisclaimer />
+        </div>
 
-        <section className={styles.section}>
-          <h2 className={styles.h2}>{weightGlycemicContent.title}</h2>
-          <ul className={styles.bullets}>
-            {weightGlycemicContent.tips.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-          <p className={styles.quote}>{weightGlycemicContent.aiToneExample}</p>
-        </section>
-
-        <section className={styles.section}>
-          <h2 className={styles.h2}>{sleepContent.title}</h2>
-          <ul className={styles.bullets}>
-            {sleepContent.tips.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className={styles.section}>
-          <h2 className={styles.h2}>{moodFatigueContent.title}</h2>
-          <ul className={styles.bullets}>
-            {moodFatigueContent.tips.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className={styles.section}>
-          <h2 className={styles.h2}>À privilégier (général)</h2>
-          <ul className={styles.bullets}>
-            {menopauseFoodsToFavor.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className={styles.section}>
-          <h2 className={styles.h2}>À modérer ou ajuster selon tolérance</h2>
-          <ul className={styles.bullets}>
-            {menopauseFoodsOrHabitsToModerate.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className={styles.section}>
-          <h2 className={styles.h2}>Rappels responsables</h2>
-          <ul className={styles.bullets}>
-            {menopauseDisclaimers.map((d) => (
-              <li key={d}>{d}</li>
-            ))}
-          </ul>
-        </section>
-
-        <MedicalDisclaimer className={styles.disclaimer} />
-
-        <Link className={styles.back} to="/">
+        <Link className={styles.back} to="/choix-parcours">
           ← Changer de parcours
         </Link>
       </div>

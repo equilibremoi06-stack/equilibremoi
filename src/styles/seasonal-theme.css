@@ -1,9 +1,7 @@
 :root {
-  --seasonal-welcome-muted: #7a7379;
-  --seasonal-decor-opacity: 0.42;
+  --seasonal-welcome-muted: rgba(36, 49, 38, 0.55);
 }
 
-/* Colonne = même largeur que #root : calques absolute y restent (pas les marges viewport) */
 .seasonal-app-column {
   position: relative;
   isolation: isolate;
@@ -12,13 +10,11 @@
   flex: 1;
   width: 100%;
   min-height: 100%;
-  overflow: hidden;
 }
 
-/* Au-dessus du calque d’animation (z-index: 0), sous modales éventuelles */
 .seasonal-main-wrap {
   position: relative;
-  z-index: 3;
+  z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -36,7 +32,6 @@
   flex-direction: column;
 }
 
-/* Contenu au-dessus des calques fixed (animation / déco), sans bloquer les clics */
 .seasonal-app-shell-content {
   position: relative;
   z-index: 1;
@@ -44,303 +39,6 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.seasonal-decor {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.seasonal-decor-inner {
-  position: absolute;
-  inset: 0;
-  opacity: var(--seasonal-decor-opacity);
-}
-
-@keyframes seasonal-petal-fall {
-  0% {
-    transform: translate3d(0, -12%, 0) rotate(0deg);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.55;
-  }
-  100% {
-    transform: translate3d(18px, 110vh, 0) rotate(220deg);
-    opacity: 0;
-  }
-}
-
-.seasonal-petal {
-  position: absolute;
-  top: -5%;
-  left: 8%;
-  width: 9px;
-  height: 12px;
-  border-radius: 60% 60% 50% 50%;
-  background: linear-gradient(145deg, #f5c0d8, #e8a8c8);
-  animation: seasonal-petal-fall 26s linear infinite;
-  filter: blur(0.3px);
-}
-
-.seasonal-petal:nth-child(2) {
-  left: 18%;
-  animation-delay: -6s;
-  animation-duration: 31s;
-}
-.seasonal-petal:nth-child(3) {
-  left: 48%;
-  animation-delay: -14s;
-}
-.seasonal-petal:nth-child(4) {
-  left: 72%;
-  animation-delay: -20s;
-  animation-duration: 28s;
-}
-
-@keyframes seasonal-sun-pulse {
-  0%,
-  100% {
-    opacity: 0.28;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(1.04);
-  }
-}
-
-.seasonal-sun-halo {
-  position: absolute;
-  top: -18%;
-  right: -8%;
-  width: min(52vw, 380px);
-  height: min(52vw, 380px);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 224, 140, 0.35) 0%,
-    rgba(126, 196, 196, 0.12) 55%,
-    transparent 70%
-  );
-  animation: seasonal-sun-pulse 22s ease-in-out infinite;
-}
-
-@keyframes seasonal-leaf-drift {
-  0% {
-    transform: translate3d(0, -8%, 0) rotate(-8deg);
-    opacity: 0;
-  }
-  18% {
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate3d(-24px, 105vh, 0) rotate(40deg);
-    opacity: 0;
-  }
-}
-
-.seasonal-leaf {
-  position: absolute;
-  top: -4%;
-  left: 12%;
-  width: 14px;
-  height: 10px;
-  border-radius: 2px 12px 2px 12px;
-  background: linear-gradient(135deg, #d4a574, #b85c5c);
-  animation: seasonal-leaf-drift 32s linear infinite;
-  opacity: 0.85;
-}
-
-.seasonal-leaf:nth-child(2) {
-  left: 30%;
-  animation-delay: -10s;
-}
-.seasonal-leaf:nth-child(3) {
-  left: 62%;
-  animation-delay: -18s;
-  animation-duration: 28s;
-}
-
-@keyframes seasonal-frost-shimmer {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 200% 50%;
-  }
-}
-
-.seasonal-frost {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    115deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.12) 45%,
-    transparent 55%,
-    transparent 100%
-  );
-  background-size: 220% 100%;
-  animation: seasonal-frost-shimmer 48s linear infinite;
-  opacity: 0.35;
-}
-
-@keyframes seasonal-heart-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.2;
-  }
-  50% {
-    transform: translate3d(0, -6px, 0) scale(1.05);
-    opacity: 0.38;
-  }
-}
-
-.seasonal-heart {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: #f0a8b8;
-  transform: rotate(45deg);
-  border-radius: 2px;
-  animation: seasonal-heart-float 14s ease-in-out infinite;
-  opacity: 0.35;
-}
-.seasonal-heart::before,
-.seasonal-heart::after {
-  content: '';
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: #f0a8b8;
-  border-radius: 50%;
-}
-.seasonal-heart::before {
-  left: -5px;
-}
-.seasonal-heart::after {
-  top: -5px;
-}
-
-@keyframes seasonal-gold-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 42px rgba(212, 175, 55, 0.12);
-    opacity: 0.35;
-  }
-  50% {
-    box-shadow: 0 0 64px rgba(212, 175, 55, 0.2);
-    opacity: 0.48;
-  }
-}
-
-.seasonal-womens-aura {
-  position: absolute;
-  inset: auto auto 12% 8%;
-  width: min(40vw, 220px);
-  height: min(40vw, 220px);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(212, 175, 55, 0.15) 0%,
-    transparent 65%
-  );
-  animation: seasonal-gold-glow 18s ease-in-out infinite;
-}
-
-.seasonal-egg {
-  position: absolute;
-  width: 8px;
-  height: 10px;
-  border-radius: 50% 50% 48% 48%;
-  opacity: 0.45;
-}
-.seasonal-egg:nth-child(1) {
-  top: 16%;
-  left: 12%;
-  background: linear-gradient(180deg, #f5c8e0, #e8a8c8);
-}
-.seasonal-egg:nth-child(2) {
-  top: 72%;
-  right: 14%;
-  background: linear-gradient(180deg, #c8e8f0, #a8d4e8);
-}
-.seasonal-egg:nth-child(3) {
-  bottom: 22%;
-  left: 22%;
-  background: linear-gradient(180deg, #fff8e0, #f0e8a8);
-}
-
-.seasonal-pumpkin {
-  position: absolute;
-  bottom: 10%;
-  right: 10%;
-  width: 18px;
-  height: 14px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #f0a860, #c87830);
-  opacity: 0.4;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
-}
-.seasonal-moon {
-  position: absolute;
-  top: 12%;
-  right: 18%;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #f8f4ff, #c8c0d8);
-  opacity: 0.28;
-}
-
-@keyframes seasonal-sparkle {
-  0%,
-  100% {
-    opacity: 0.15;
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: translateY(-4px) scale(1.08);
-  }
-}
-
-.seasonal-sparkle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #f0d878;
-  animation: seasonal-sparkle 12s ease-in-out infinite;
-  box-shadow: 0 0 10px rgba(212, 168, 83, 0.35);
-}
-
-.seasonal-advent-strip {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0.35;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(196, 92, 92, 0.35),
-    rgba(212, 168, 83, 0.4),
-    transparent
-  );
-}
-
-.seasonal-theme--christmas .seasonal-advent-strip {
-  display: block;
 }
 
 .seasonal-welcome-line {
@@ -358,7 +56,7 @@
   max-width: 34rem;
   font-size: 0.82rem;
   line-height: 1.5;
-  color: #8a8288;
+  color: rgba(36, 49, 38, 0.45);
   font-style: italic;
 }
 
@@ -372,15 +70,14 @@
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #8a6f2a;
+  color: #6b5a2a;
   background: linear-gradient(
     145deg,
-    rgba(255, 248, 230, 0.95),
-    rgba(232, 212, 160, 0.55)
+    rgba(255, 250, 240, 0.98),
+    rgba(232, 214, 176, 0.45)
   );
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.12);
-  animation: seasonal-gold-glow 14s ease-in-out infinite;
+  border: 1px solid rgba(200, 164, 74, 0.35);
+  box-shadow: 0 4px 16px rgba(36, 49, 38, 0.06);
 }
 
 .seasonal-brand-mark {
@@ -390,21 +87,21 @@
   z-index: 3;
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(110, 90, 100, 0.45);
+  color: rgba(36, 49, 38, 0.38);
   pointer-events: auto;
   cursor: pointer;
   user-select: none;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: none;
-  font-family: inherit;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(6px);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 167, 176, 0.25);
+  font-family: var(--sans-ui, system-ui, sans-serif);
+  background: rgba(255, 250, 247, 0.85);
+  backdrop-filter: blur(8px);
 }
 
 .seasonal-brand-mark:focus-visible {
-  outline: 2px solid var(--accent, #aa3bff);
+  outline: 2px solid rgba(200, 164, 74, 0.55);
   outline-offset: 2px;
 }

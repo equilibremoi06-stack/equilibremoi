@@ -13,6 +13,14 @@ import { saveHealthConditions } from '../lib/healthProfileStorage';
 import { MedicalDisclaimer } from '../components/medical/MedicalDisclaimer';
 import styles from './QuestionnaireClassiquePage.module.css';
 
+const STEP_LABELS = [
+  'Ta santé',
+  'Ton intention',
+  'Ton profil',
+  'Ton rythme',
+  'Ton récap',
+] as const;
+
 export default function QuestionnaireClassiquePage() {
   const [step, setStep] = useState(1);
   const [healthConditions, setHealthConditions] = useState<HealthConditionId[]>([]);
@@ -28,6 +36,7 @@ export default function QuestionnaireClassiquePage() {
   const [budget, setBudget] = useState('');
 
   const eatingDisorder = healthConditions.includes('eating_disorder');
+  const totalSteps = 5;
 
   const toggleCondition = (id: HealthConditionId) => {
     if (id === NONE_CONDITION_ID) {
@@ -69,31 +78,46 @@ export default function QuestionnaireClassiquePage() {
     setKeywordAlert(detectSensitiveKeywords(v));
   };
 
+  const stepMeta = (n: number) => (
+    <p className={styles.stepMeta}>
+      Étape {n} sur {totalSteps} · {STEP_LABELS[n - 1]}
+    </p>
+  );
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
         {step === 1 && (
           <>
-            <h2 className={styles.h2}>Ta santé</h2>
+            {stepMeta(1)}
+            <h2 className={styles.h2}>Parlons de toi, en confiance</h2>
             <p className={styles.intro}>
-              As-tu un problème de santé particulier ou une situation qui nécessite de
-              la prudence ?
+              As-tu une situation qui appelle un peu plus de prudence côté santé ?
+              Réponds avec honnêteté — cela nous aide à rester douces avec toi.
             </p>
-            <p className={styles.hint}>Tu peux sélectionner plusieurs réponses.</p>
+            <p className={styles.hint}>Plusieurs réponses possibles.</p>
             <ul className={styles.options}>
-              {HEALTH_CONDITION_OPTIONS.map(({ id, label }) => (
-                <li key={id}>
-                  <label className={styles.optionRow}>
-                    <input
-                      type="checkbox"
-                      checked={healthConditions.includes(id)}
-                      onChange={() => toggleCondition(id)}
-                      className={styles.check}
-                    />
-                    <span>{label}</span>
-                  </label>
-                </li>
-              ))}
+              {HEALTH_CONDITION_OPTIONS.map(({ id, label }) => {
+                const checked = healthConditions.includes(id);
+                return (
+                  <li key={id}>
+                    <label
+                      className={`${styles.optionCard} ${checked ? styles.optionCardChecked : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleCondition(id)}
+                        className={styles.srOnly}
+                      />
+                      <span className={styles.optionCheck} aria-hidden>
+                        {checked ? '✓' : ''}
+                      </span>
+                      <span className={styles.optionLabel}>{label}</span>
+                    </label>
+                  </li>
+                );
+              })}
             </ul>
             {healthError ? <p className={styles.error}>{healthError}</p> : null}
             <button type="button" className={styles.button} onClick={handleHealthContinue}>
@@ -104,11 +128,14 @@ export default function QuestionnaireClassiquePage() {
 
         {step === 2 && (
           <>
-            <h2 className={styles.h2}>Bienvenue 👋</h2>
-            <p className={styles.intro}>Ton objectif ?</p>
+            {stepMeta(2)}
+            <h2 className={styles.h2}>Ce qui te motive en ce moment</h2>
+            <p className={styles.intro}>
+              Une phrase suffit : énergie, simplicité, plaisir au plat…
+            </p>
             <input
               className={styles.input}
-              placeholder="Plus d’énergie, des repas plus simples…"
+              placeholder="Ex. des repas plus simples, plus d’énergie…"
               value={objectif}
               onChange={(e) => onObjectifChange(e.target.value)}
             />
@@ -125,10 +152,15 @@ export default function QuestionnaireClassiquePage() {
 
         {step === 3 && (
           <>
-            <h2 className={styles.h2}>Ton profil</h2>
+            {stepMeta(3)}
+            <h2 className={styles.h2}>Quelques repères</h2>
+            <p className={styles.intro}>
+              Des chiffres optionnels pour personnaliser — sans jugement.
+            </p>
             <input
               className={styles.input}
               type="number"
+              inputMode="numeric"
               placeholder="Ton âge"
               value={age}
               onChange={(e) => setAge(e.target.value)}
@@ -138,6 +170,7 @@ export default function QuestionnaireClassiquePage() {
                 <input
                   className={styles.input}
                   type="number"
+                  inputMode="decimal"
                   placeholder="Ton poids (kg)"
                   value={poids}
                   onChange={(e) => setPoids(e.target.value)}
@@ -145,6 +178,7 @@ export default function QuestionnaireClassiquePage() {
                 <input
                   className={styles.input}
                   type="number"
+                  inputMode="numeric"
                   placeholder="Ta taille (cm)"
                   value={taille}
                   onChange={(e) => setTaille(e.target.value)}
@@ -164,17 +198,22 @@ export default function QuestionnaireClassiquePage() {
 
         {step === 4 && (
           <>
-            <h2 className={styles.h2}>Ton niveau</h2>
+            {stepMeta(4)}
+            <h2 className={styles.h2}>Ton rythme & ton budget</h2>
+            <p className={styles.intro}>
+              Pour des idées réalistes, adaptées à ta vie.
+            </p>
             <input
               className={styles.input}
-              placeholder="Débutant / moyen / avancé"
+              placeholder="Niveau en cuisine : débutante, à l’aise…"
               value={niveau}
               onChange={(e) => setNiveau(e.target.value)}
             />
             <input
               className={styles.input}
               type="number"
-              placeholder="Ton budget alimentaire (€ / semaine)"
+              inputMode="decimal"
+              placeholder="Budget alimentaire (€ / semaine)"
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
             />
@@ -186,32 +225,44 @@ export default function QuestionnaireClassiquePage() {
 
         {step === 5 && (
           <>
-            <h2 className={styles.h2}>Ton plan personnalisé 🎯</h2>
-            <p>
-              <b>Objectif :</b> {objectif}
+            {stepMeta(5)}
+            <h2 className={styles.h2}>Ton premier aperçu</h2>
+            <p className={styles.intro}>
+              Un résumé pour la suite — les conseils restent généraux et informatifs.
             </p>
-            <p>
-              <b>Âge :</b> {age}
-            </p>
-            {!eatingDisorder ? (
-              <>
-                <p>
-                  <b>Poids :</b> {poids} kg
-                </p>
-                <p>
-                  <b>Taille :</b> {taille} cm
-                </p>
-              </>
-            ) : null}
-            <p>
-              <b>Niveau :</b> {niveau}
-            </p>
-            <p>
-              <b>Budget :</b> {budget} €
-            </p>
+            <div className={styles.plan}>
+              <div className={styles.planRow}>
+                <span>Objectif</span>
+                <span>{objectif || '—'}</span>
+              </div>
+              <div className={styles.planRow}>
+                <span>Âge</span>
+                <span>{age || '—'}</span>
+              </div>
+              {!eatingDisorder ? (
+                <>
+                  <div className={styles.planRow}>
+                    <span>Poids</span>
+                    <span>{poids ? `${poids} kg` : '—'}</span>
+                  </div>
+                  <div className={styles.planRow}>
+                    <span>Taille</span>
+                    <span>{taille ? `${taille} cm` : '—'}</span>
+                  </div>
+                </>
+              ) : null}
+              <div className={styles.planRow}>
+                <span>Niveau</span>
+                <span>{niveau || '—'}</span>
+              </div>
+              <div className={styles.planRow}>
+                <span>Budget</span>
+                <span>{budget ? `${budget} €` : '—'}</span>
+              </div>
+            </div>
             <MedicalDisclaimer className={styles.disclaimerSpacing} />
             <button type="button" className={styles.buttonGhost} onClick={() => setStep(1)}>
-              Recommencer
+              Recommencer le questionnaire
             </button>
           </>
         )}
@@ -225,6 +276,12 @@ export default function QuestionnaireClassiquePage() {
             onClick={() => setShowSafetyModal(false)}
           />
           <div className={styles.modalCard} role="dialog" aria-modal="true">
+            <div className={styles.modalHeader}>
+              <span className={styles.modalIcon} aria-hidden>
+                ✦
+              </span>
+              <span className={styles.modalKicker}>Message important</span>
+            </div>
             <p className={styles.modalText}>{SAFETY_MESSAGE_SENSITIVE}</p>
             {healthConditions.includes('eating_disorder') ? (
               <>

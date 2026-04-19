@@ -27,11 +27,18 @@ export default function ChoixParcoursPage() {
               <SeasonalProfileBadge theme={theme} />
             </div>
           ) : null}
-          <h1>Un accompagnement pensé pour toi, vraiment.</h1>
+          <p className={styles.kicker}>Ton rythme, ton corps</p>
+          <h1 className={styles.title}>
+            L’accompagnement alimentaire
+            <br />
+            qui te ressemble
+          </h1>
+          <div className={styles.decorLine} aria-hidden />
         </div>
-        <p>
-          Chaque femme a un rythme, un corps et des besoins différents. Choisis le
-          parcours qui correspond à ton moment de vie.
+        <p className={styles.subtitle}>
+          Une approche douce, pensée pour les femmes : choisis le parcours qui
+          correspond à ton moment de vie. Bien-être uniquement — jamais un substitut
+          à un suivi médical.
         </p>
       </section>
 
@@ -41,52 +48,52 @@ export default function ChoixParcoursPage() {
 
       <section className={styles.cards}>
         <article className={styles.card}>
-          <h2>Équilibre au quotidien 🌿</h2>
-          <p>
-            Retrouve un équilibre alimentaire simple, sans pression ni restriction,
-            avec des menus adaptés à ton rythme et ton quotidien.
+          <h2 className={styles.cardTitle}>Équilibre au quotidien</h2>
+          <p className={styles.cardLead}>
+            Des repas qui s’adaptent à ta vie, sans culpabiliser. Simple, fluide,
+            à ton tempo.
           </p>
           <ul className={styles.list}>
-            <li>Menus personnalisés</li>
-            <li>Accompagnement émotionnel</li>
-            <li>Flexibilité totale</li>
-            <li>Approche douce et réaliste</li>
+            <li>Menus qui suivent ton humeur</li>
+            <li>Petites victoires célébrées</li>
+            <li>Zéro pression, tout en douceur</li>
           </ul>
           <button type="button" className={styles.button} onClick={handleClassique}>
-            Je choisis ce parcours
+            Choisir ce parcours
           </button>
         </article>
 
         <article className={`${styles.card} ${styles.cardHighlight}`}>
-          <span className={styles.badge}>Recommandé si concernée</span>
-          <h2>Parcours Ménopause 🌸</h2>
-          <p>
-            Un accompagnement spécifique pour mieux vivre les changements hormonaux,
-            retrouver ton énergie et apaiser ton quotidien.
+          <span className={styles.badge}>Si cette étape te parle</span>
+          <h2 className={styles.cardTitle}>Parcours Ménopause</h2>
+          <p className={styles.cardLead}>
+            Un cadre rassurant pour les changements du corps : confort, clarté et
+            bienveillance au quotidien.
           </p>
           <ul className={styles.list}>
-            <li>Menus adaptés à cette période</li>
-            <li>Gestion des fringales &amp; fatigue</li>
-            <li>Conseils doux et ciblés</li>
-            <li>Approche rassurante et sans culpabilité</li>
+            <li>Conseils adaptés à cette période</li>
+            <li>Ton protecteur, jamais culpabilisant</li>
+            <li>Aller-retour possible avec ton médecin</li>
           </ul>
-          <button type="button" className={styles.button} onClick={handleMenopause}>
-            Je choisis ce parcours
+          <button type="button" className={styles.buttonPrimary} onClick={handleMenopause}>
+            Choisir ce parcours
           </button>
         </article>
       </section>
 
-      <section className={styles.warning}>
-        <strong>Important 💛</strong>
-        <div>
-          ÉquilibreMoi est une application de bien-être et d&apos;accompagnement.
-          Elle ne remplace pas un professionnel de santé, un médecin ou un suivi
-          médical. Les conseils proposés sont généraux et doivent être adaptés à la
-          situation personnelle de chaque utilisatrice. En cas de doute, de
-          pathologie, ou de besoin spécifique, il est recommandé de consulter un
-          professionnel de santé.
+      <aside className={styles.legalNote}>
+        <span className={styles.legalIcon} aria-hidden>
+          ✦
+        </span>
+        <div className={styles.legalBody}>
+          <span className={styles.legalTitle}>Note bien-être</span>
+          <p>
+            ÉquilibreMoi t’accompagne dans une démarche de bien-être. Elle ne remplace
+            pas un professionnel de santé. Les contenus sont généraux ; en cas de
+            pathologie, traitement ou doute, parle-en à ton médecin ou à un spécialiste.
+          </p>
         </div>
-      </section>
+      </aside>
     </div>
   );
 }
