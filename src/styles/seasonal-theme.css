@@ -3,6 +3,17 @@
   --seasonal-decor-opacity: 0.42;
 }
 
+/* Au-dessus de SeasonalAnimation (z-index: 1), sous modales éventuelles */
+.seasonal-main-wrap {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
+}
+
 .seasonal-app-shell {
   position: relative;
   isolation: isolate;
