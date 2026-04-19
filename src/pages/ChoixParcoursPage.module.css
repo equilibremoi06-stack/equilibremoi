@@ -1,19 +1,11 @@
 .page {
-  --eq-rose-poudre: #f2a7b0;
-  --eq-rose-blush: #e89aaa;
-  --eq-rose-nude: #f6d6dc;
-  --eq-creme: #f8f1ea;
-  --eq-ivory: #fffaf7;
-  --eq-or: #c8a44a;
-  --eq-text: #243126;
-
   min-height: 100%;
   flex: 1;
-  background: var(--eq-page-bg, linear-gradient(168deg, var(--eq-ivory) 0%, var(--eq-creme) 50%, #fff8f5 100%));
+  background: linear-gradient(180deg, #fffaf7 0%, #fbecef 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: clamp(2.25rem, 5vw, 3.5rem) clamp(1.15rem, 4vw, 2rem) clamp(2.75rem, 6vw, 4rem);
+  padding: clamp(2.5rem, 5.5vw, 3.75rem) clamp(1.15rem, 4vw, 2rem) clamp(3rem, 6.5vw, 4.25rem);
   font-family: var(--sans-ui, system-ui, sans-serif);
   color: var(--eq-text);
 }
@@ -41,7 +33,7 @@
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(36, 49, 38, 0.48);
+  color: #c8a44a;
 }
 
 .title {
@@ -50,15 +42,17 @@
   font-size: clamp(2.05rem, 5.2vw, 2.85rem);
   font-weight: 600;
   line-height: 1.08;
-  letter-spacing: -0.03em;
-  color: var(--eq-text);
+  letter-spacing: -0.035em;
+  color: #243126;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
   font-feature-settings: 'kern' 1;
 }
 
 .decorLine {
   width: min(5rem, 28vw);
-  height: 1px;
+  height: 2px;
   margin: clamp(1.1rem, 3vw, 1.45rem) auto 0;
+  border-radius: 2px;
   background: linear-gradient(
     90deg,
     transparent,
@@ -67,7 +61,7 @@
     rgba(200, 164, 74, 0.65) 80%,
     transparent
   );
-  box-shadow: 0 0 12px rgba(232, 154, 170, 0.35);
+  box-shadow: 0 0 16px rgba(232, 154, 170, 0.45);
 }
 
 .subtitle {
@@ -76,7 +70,7 @@
   font-size: clamp(0.98rem, 2.1vw, 1.05rem);
   line-height: 1.72;
   letter-spacing: 0.01em;
-  color: rgba(36, 49, 38, 0.72);
+  color: var(--eq-text-muted);
   font-weight: 400;
 }
 
@@ -99,37 +93,36 @@
 .card {
   position: relative;
   text-align: left;
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.94) 0%,
-    rgba(255, 250, 247, 0.88) 100%
-  );
-  border: 1px solid rgba(242, 167, 176, 0.28);
-  border-radius: clamp(1.4rem, 3vw, 1.75rem);
-  padding: clamp(1.75rem, 4vw, 2.15rem) clamp(1.5rem, 3.5vw, 1.9rem);
+  border-radius: 20px;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid rgba(200, 164, 74, 0.28);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 14px 40px rgba(36, 49, 38, 0.07),
-    0 2px 8px rgba(36, 49, 38, 0.04);
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+    0 10px 30px rgba(0, 0, 0, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .card:hover {
-  border-color: rgba(232, 154, 170, 0.45);
+  transform: translateY(-5px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 20px 48px rgba(36, 49, 38, 0.09),
-    0 4px 14px rgba(36, 49, 38, 0.05);
+    0 20px 50px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(232, 154, 170, 0.15);
+  border-color: rgba(200, 164, 74, 0.4);
 }
 
 .cardHighlight {
   background: linear-gradient(
-    155deg,
-    rgba(255, 252, 250, 0.98) 0%,
-    rgba(246, 214, 220, 0.35) 48%,
-    rgba(255, 250, 247, 0.95) 100%
+    165deg,
+    #fff 0%,
+    rgba(253, 238, 242, 0.55) 55%,
+    #fffaf7 100%
   );
-  border-color: rgba(232, 154, 170, 0.42);
+  border-color: rgba(232, 154, 170, 0.35);
 }
 
 .badge {
@@ -138,9 +131,9 @@
   margin-bottom: 1rem;
   padding: 0.38rem 0.9rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(200, 164, 74, 0.35);
-  color: rgba(36, 49, 38, 0.62);
+  background: rgba(255, 250, 247, 0.95);
+  border: 1px solid rgba(200, 164, 74, 0.4);
+  color: #9a6b2c;
   font-size: 0.65rem;
   font-weight: 650;
   letter-spacing: 0.14em;
@@ -148,37 +141,31 @@
 }
 
 .cardTitle {
-  margin: 0 0 0.55rem;
+  margin: 0 0 1rem;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: clamp(1.35rem, 2.8vw, 1.55rem);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.2;
-  color: var(--eq-text);
-}
-
-.cardLead {
-  margin: 0 0 1.15rem;
-  font-size: 0.94rem;
-  line-height: 1.68;
-  color: rgba(36, 49, 38, 0.76);
+  color: #243126;
 }
 
 .list {
-  margin: 0 0 1.5rem;
+  margin: 0 0 1.25rem;
   padding: 0;
   padding-left: 1.2rem;
   list-style: none;
+  flex: 1 1 auto;
 }
 
 .list li {
   position: relative;
   margin-bottom: 0.55rem;
   padding-left: 0.15rem;
-  font-size: 0.875rem;
-  line-height: 1.55;
-  letter-spacing: 0.02em;
-  color: rgba(36, 49, 38, 0.82);
+  font-size: 0.9rem;
+  line-height: 1.58;
+  letter-spacing: 0.015em;
+  color: rgba(36, 49, 38, 0.88);
 }
 
 .list li::before {
@@ -189,66 +176,42 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--eq-or), var(--eq-rose-blush));
-  opacity: 0.9;
+  background: linear-gradient(135deg, #c8a44a, var(--eq-rose-blush));
+  opacity: 0.95;
 }
 
 .list li:last-child {
   margin-bottom: 0;
 }
 
-.button,
-.buttonPrimary {
+.cta {
+  margin-top: 20px;
   width: 100%;
+  padding: 12px 20px;
+  border-radius: 30px;
   border: none;
-  border-radius: 999px;
-  padding: 0.92rem 1.25rem;
-  font-size: 0.78rem;
-  font-weight: 650;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+  color: #fff;
   cursor: pointer;
   font-family: inherit;
-  transition:
-    filter 0.2s ease,
-    box-shadow 0.2s ease;
+  background: linear-gradient(135deg, #e8b4b8, #d4af37);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+  transition: all 0.3s ease;
 }
 
-.button {
-  color: rgba(36, 49, 38, 0.88);
-  background: linear-gradient(180deg, #fff 0%, var(--eq-creme) 100%);
-  border: 1px solid rgba(242, 167, 176, 0.45);
-  box-shadow: 0 6px 20px rgba(36, 49, 38, 0.06);
+.cta:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5);
 }
 
-.button:hover {
-  filter: brightness(1.02);
-  box-shadow: 0 8px 26px rgba(36, 49, 38, 0.08);
+.cta:active {
+  transform: scale(1.02);
 }
 
-.buttonPrimary {
-  color: #fff;
-  background: linear-gradient(
-    125deg,
-    var(--eq-rose-blush) 0%,
-    var(--eq-rose-poudre) 45%,
-    #ddb66a 160%
-  );
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.22) inset,
-    0 10px 32px rgba(200, 120, 130, 0.28);
-}
-
-.buttonPrimary:hover {
-  filter: brightness(1.04);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.28) inset,
-    0 14px 38px rgba(190, 110, 120, 0.32);
-}
-
-.button:focus-visible,
-.buttonPrimary:focus-visible {
-  outline: 2px solid rgba(200, 164, 74, 0.55);
+.cta:focus-visible {
+  outline: 2px solid rgba(200, 164, 74, 0.75);
   outline-offset: 3px;
 }
 
@@ -260,18 +223,18 @@
   gap: 0.85rem;
   align-items: flex-start;
   text-align: left;
-  padding: 0.85rem 1rem 0.95rem 1.05rem;
-  border-radius: 14px;
-  background: rgba(255, 250, 247, 0.92);
-  border: 1px solid rgba(242, 167, 176, 0.28);
-  box-shadow: 0 8px 28px rgba(36, 49, 38, 0.04);
+  padding: 1rem 1.15rem 1.05rem 1.15rem;
+  border-radius: 16px;
+  background: rgba(255, 250, 247, 0.95);
+  border: 1px solid rgba(200, 164, 74, 0.22);
+  box-shadow: 0 10px 28px rgba(36, 49, 38, 0.06);
 }
 
 .legalIcon {
   flex-shrink: 0;
   margin-top: 0.1rem;
   font-size: 0.85rem;
-  color: rgba(200, 164, 74, 0.85);
+  color: rgba(200, 164, 74, 0.9);
   line-height: 1.2;
 }
 
@@ -286,15 +249,15 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(36, 49, 38, 0.48);
+  color: rgba(36, 49, 38, 0.52);
 }
 
 .legalBody p {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   line-height: 1.65;
   letter-spacing: 0.02em;
-  color: rgba(36, 49, 38, 0.62);
+  color: rgba(36, 49, 38, 0.68);
 }
 
 @media (max-width: 860px) {

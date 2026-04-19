@@ -13,7 +13,6 @@ import styles from './QuestionnaireMenopausePage.module.css';
 
 const MINI_CARDS = [
   {
-    accent: '🌸',
     title: 'Bouffées de chaleur',
     lines: [
       'Hydratation et repas simples, à ton rythme.',
@@ -21,7 +20,6 @@ const MINI_CARDS = [
     ],
   },
   {
-    accent: '🌙',
     title: 'Sommeil',
     lines: [
       'Soirée plus légère si tu le souhaites.',
@@ -29,7 +27,6 @@ const MINI_CARDS = [
     ],
   },
   {
-    accent: '💗',
     title: 'Humeur & fatigue',
     lines: [
       'Régularité des repas, petits plaisirs autorisés.',
@@ -37,8 +34,7 @@ const MINI_CARDS = [
     ],
   },
   {
-    accent: '✨',
-    title: 'Équilibre glycémique & ventre',
+    title: 'Équilibre glycémique',
     lines: [
       'Repas structurés, aliments peu transformés.',
       'Stabilité douce plutôt que contrôle strict.',
@@ -58,7 +54,7 @@ export default function QuestionnaireMenopausePage() {
     <div className={styles.wrap}>
       <div className={styles.inner}>
         <header className={styles.header}>
-          <p className={styles.kicker}>Parcours Ménopause</p>
+          <p className={styles.kicker}>Parcours ménopause</p>
           <h1 className={styles.title}>Douceur & clarté pour cette étape</h1>
           <p className={styles.lead}>
             Un accompagnement bien-être pour t’inspirer au quotidien — jamais une
@@ -80,9 +76,6 @@ export default function QuestionnaireMenopausePage() {
         <div className={styles.grid}>
           {MINI_CARDS.map((c) => (
             <article key={c.title} className={styles.miniCard}>
-              <span className={styles.miniAccent} aria-hidden>
-                {c.accent}
-              </span>
               <h2 className={styles.miniTitle}>{c.title}</h2>
               {c.lines.map((line) => (
                 <p key={line} className={styles.miniLine}>
@@ -144,7 +137,7 @@ export default function QuestionnaireMenopausePage() {
           <MedicalDisclaimer />
         </div>
 
-        <Link className={styles.back} to="/choix-parcours">
+        <Link className={styles.back} to="/">
           ← Changer de parcours
         </Link>
       </div>

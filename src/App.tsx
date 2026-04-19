@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { SeasonalLayout } from './components/seasonal/SeasonalLayout';
 import { SeasonalThemeProvider } from './hooks/useSeasonalTheme';
 import ChoixParcoursEntryPage from './pages/ChoixParcoursEntryPage';
@@ -15,9 +15,12 @@ function App() {
             <SeasonalLayout>
               <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/landing" element={<Navigate to="/" replace />} />
+                <Route path="/home" element={<Navigate to="/" replace />} />
+                <Route path="/app" element={<ChoixParcoursEntryPage />} />
                 <Route
                   path="/choix-parcours"
-                  element={<ChoixParcoursEntryPage />}
+                  element={<Navigate to="/app" replace />}
                 />
                 <Route
                   path="/questionnaire-classique"

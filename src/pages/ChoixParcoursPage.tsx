@@ -46,39 +46,45 @@ export default function ChoixParcoursPage() {
         <SensitiveProfileBanner />
       </div>
 
-      <section className={styles.cards}>
-        <article className={styles.card}>
+      <section className={styles.cards} aria-label="Choix du parcours">
+        <div className={styles.card} onClick={handleClassique}>
           <h2 className={styles.cardTitle}>Équilibre au quotidien</h2>
-          <p className={styles.cardLead}>
-            Des repas qui s’adaptent à ta vie, sans culpabiliser. Simple, fluide,
-            à ton tempo.
-          </p>
           <ul className={styles.list}>
-            <li>Menus qui suivent ton humeur</li>
-            <li>Petites victoires célébrées</li>
-            <li>Zéro pression, tout en douceur</li>
+            <li>Des repas simples et sans pression</li>
+            <li>À ton rythme, selon ta vie</li>
+            <li>Retrouver du plaisir sans culpabiliser</li>
           </ul>
-          <button type="button" className={styles.button} onClick={handleClassique}>
-            Choisir ce parcours
+          <button
+            type="button"
+            className={styles.cta}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClassique();
+            }}
+          >
+            Je choisis ce parcours
           </button>
-        </article>
+        </div>
 
-        <article className={`${styles.card} ${styles.cardHighlight}`}>
+        <div className={`${styles.card} ${styles.cardHighlight}`} onClick={handleMenopause}>
           <span className={styles.badge}>Si cette étape te parle</span>
-          <h2 className={styles.cardTitle}>Parcours Ménopause</h2>
-          <p className={styles.cardLead}>
-            Un cadre rassurant pour les changements du corps : confort, clarté et
-            bienveillance au quotidien.
-          </p>
+          <h2 className={styles.cardTitle}>Parcours ménopause</h2>
           <ul className={styles.list}>
-            <li>Conseils adaptés à cette période</li>
-            <li>Ton protecteur, jamais culpabilisant</li>
-            <li>Aller-retour possible avec ton médecin</li>
+            <li>Un accompagnement adapté à cette période</li>
+            <li>Retrouver ton énergie en douceur</li>
+            <li>Des conseils rassurants et personnalisés</li>
           </ul>
-          <button type="button" className={styles.buttonPrimary} onClick={handleMenopause}>
-            Choisir ce parcours
+          <button
+            type="button"
+            className={styles.cta}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMenopause();
+            }}
+          >
+            Je choisis ce parcours
           </button>
-        </article>
+        </div>
       </section>
 
       <aside className={styles.legalNote}>
