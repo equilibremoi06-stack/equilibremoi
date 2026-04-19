@@ -15,7 +15,7 @@
 }
 
 .card {
-  max-width: 26rem;
+  max-width: min(100%, 36rem);
   background: rgba(255, 255, 255, 0.92);
   border-radius: 1.25rem;
   padding: clamp(1.5rem, 4vw, 2rem);
@@ -54,4 +54,67 @@
   outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 4px;
+}
+
+.section {
+  margin-bottom: 1.35rem;
+}
+
+.h2 {
+  font-family: var(--heading);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 0.5rem;
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.bullets li {
+  margin-bottom: 0.35rem;
+}
+
+.alert {
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(245, 232, 238, 0.85);
+  border: 1px solid rgba(210, 180, 205, 0.5);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.alert strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--text-h);
+}
+
+.alert p {
+  margin: 0;
+}
+
+.note,
+.message,
+.quote {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.quote {
+  font-style: italic;
+  color: rgba(80, 72, 78, 0.92);
+}
+
+.disclaimer {
+  margin: 1.25rem 0 1rem;
 }

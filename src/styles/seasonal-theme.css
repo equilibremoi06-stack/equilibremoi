@@ -18,7 +18,7 @@
 /* Au-dessus du calque d’animation (z-index: 0), sous modales éventuelles */
 .seasonal-main-wrap {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   flex: 1;
   display: flex;
   flex-direction: column;

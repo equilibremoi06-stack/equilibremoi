@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { SensitiveProfileBanner } from '../components/medical/SensitiveProfileBanner';
 import { SeasonalProfileBadge } from '../components/seasonal/SeasonalProfileBadge';
 import { useSeasonalThemeContext } from '../hooks/useSeasonalTheme';
 import styles from './ChoixParcoursPage.module.css';
@@ -28,13 +29,15 @@ export default function ChoixParcoursPage() {
           ) : null}
           <h1>Un accompagnement pensé pour toi, vraiment.</h1>
         </div>
-        <p className="seasonal-welcome-line">{theme.welcomeMessage}</p>
-        <p className="seasonal-recipe-mood">{theme.recipeMood}</p>
         <p>
           Chaque femme a un rythme, un corps et des besoins différents. Choisis le
           parcours qui correspond à ton moment de vie.
         </p>
       </section>
+
+      <div className={styles.sensitiveBanner}>
+        <SensitiveProfileBanner />
+      </div>
 
       <section className={styles.cards}>
         <article className={styles.card}>
