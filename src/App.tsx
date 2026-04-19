@@ -9,23 +9,25 @@ import QuestionnaireMenopausePage from './pages/QuestionnaireMenopausePage';
 function App() {
   return (
     <BrowserRouter>
-      <SeasonalAnimation />
-      <div className="seasonal-main-wrap">
-        <SeasonalThemeProvider>
-          <SeasonalLayout>
-            <Routes>
-              <Route path="/" element={<ChoixParcoursPage />} />
-              <Route
-                path="/questionnaire-classique"
-                element={<QuestionnaireClassiquePage />}
-              />
-              <Route
-                path="/questionnaire-menopause"
-                element={<QuestionnaireMenopausePage />}
-              />
-            </Routes>
-          </SeasonalLayout>
-        </SeasonalThemeProvider>
+      <div className="seasonal-app-column">
+        <SeasonalAnimation />
+        <div className="seasonal-main-wrap">
+          <SeasonalThemeProvider>
+            <SeasonalLayout>
+              <Routes>
+                <Route path="/" element={<ChoixParcoursPage />} />
+                <Route
+                  path="/questionnaire-classique"
+                  element={<QuestionnaireClassiquePage />}
+                />
+                <Route
+                  path="/questionnaire-menopause"
+                  element={<QuestionnaireMenopausePage />}
+                />
+              </Routes>
+            </SeasonalLayout>
+          </SeasonalThemeProvider>
+        </div>
       </div>
     </BrowserRouter>
   );

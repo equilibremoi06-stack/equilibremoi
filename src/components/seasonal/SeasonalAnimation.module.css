@@ -1,248 +1,41 @@
+/* Calque limité à .seasonal-app-column — derrière le contenu */
 .layer {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  pointer-events: none;
   z-index: 0;
+  pointer-events: none;
   overflow: hidden;
 }
 
-.particle {
+.petal {
   position: absolute;
-  display: block;
-  will-change: transform, opacity;
-}
-
-/* ---------------- SPRING ---------------- */
-
-.spring .particle {
-  top: -8%;
-  border-radius: 60% 40% 60% 40%;
-  background: linear-gradient(145deg, #fbc9d4 0%, #ffffff 55%, #fce3ea 100%);
-  box-shadow: 0 1px 3px rgba(232, 150, 170, 0.35);
-  animation: springFall linear infinite;
-  filter: blur(0.15px);
-}
-
-@keyframes springFall {
-  0% {
-    transform: translate3d(0, -4vh, 0) rotate(0deg);
-    opacity: 0.55;
-  }
-  8% {
-    opacity: 0.72;
-  }
-  50% {
-    transform: translate3d(calc(var(--drift) * 0.55), 52vh, 0) rotate(155deg);
-    opacity: 0.68;
-  }
-  92% {
-    opacity: 0.55;
-  }
-  100% {
-    transform: translate3d(var(--drift), 115vh, 0) rotate(300deg);
-    opacity: 0;
-  }
-}
-
-/* ---------------- SUMMER ---------------- */
-
-.summer .particle {
-  top: calc(10% + (var(--drift) * 0.02));
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(249, 224, 122, 0.95) 0%,
-    rgba(249, 224, 122, 0.15) 65%,
-    transparent 100%
-  );
-  animation: summerGlow ease-in-out infinite;
-  filter: blur(0.5px);
-}
-
-@keyframes summerGlow {
-  0% {
-    transform: translate3d(0, 0, 0) scale(0.7);
-    opacity: 0;
-  }
-  30% {
-    opacity: 0.35;
-  }
-  50% {
-    transform: translate3d(calc(var(--drift) * 0.15), -8px, 0) scale(1);
-    opacity: 0.45;
-  }
-  100% {
-    transform: translate3d(calc(var(--drift) * 0.2), 8px, 0) scale(0.75);
-    opacity: 0;
-  }
-}
-
-/* ---------------- AUTUMN ---------------- */
-
-.autumn .particle {
   top: -10%;
-  border-radius: 20% 80% 30% 70%;
-  background: linear-gradient(135deg, #d4845a, #c8a44a);
-  animation: autumnFall linear infinite;
+  border-radius: 58% 42% 55% 45% / 62% 58% 42% 48%;
+  box-shadow: 0 4px 10px rgba(242, 167, 176, 0.18);
+  animation-name: petalFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
 }
 
-@keyframes autumnFall {
+@keyframes petalFall {
   0% {
-    transform: translate3d(0, -10vh, 0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.5;
-  }
-  50% {
-    transform: translate3d(calc(var(--drift) * 0.6), 45vh, 0) rotate(180deg);
-  }
-  100% {
-    transform: translate3d(var(--drift), 110vh, 0) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-/* ---------------- WINTER ---------------- */
-
-.winter .particle {
-  top: -10%;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ffffff 0%, #a8c4d4 100%);
-  animation: winterFall linear infinite;
-}
-
-@keyframes winterFall {
-  0% {
-    transform: translate3d(0, -10vh, 0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.55;
-  }
-  50% {
-    transform: translate3d(calc(var(--drift) * 0.35), 50vh, 0);
-  }
-  100% {
-    transform: translate3d(var(--drift), 110vh, 0);
-    opacity: 0;
-  }
-}
-
-/* ---------------- VALENTINE ---------------- */
-
-.valentine .particle {
-  bottom: -10%;
-  width: 12px !important;
-  height: 12px !important;
-  background: #f2a7b0;
-  clip-path: path(
-    'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'
-  );
-  animation: valentineFloat ease-in-out infinite;
-}
-
-@keyframes valentineFloat {
-  0% {
-    transform: translate3d(0, 0, 0) scale(0.8);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.5;
-  }
-  50% {
-    transform: translate3d(calc(var(--drift) * 0.4), -45vh, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(var(--drift), -100vh, 0) scale(0.9);
-    opacity: 0;
-  }
-}
-
-/* ---------------- HALLOWEEN ---------------- */
-
-.halloween .particle {
-  top: calc(15% + (var(--drift) * 0.03));
-  background: #d4845a;
-  clip-path: polygon(
-    50% 0%,
-    61% 35%,
-    98% 35%,
-    68% 57%,
-    79% 91%,
-    50% 70%,
-    21% 91%,
-    32% 57%,
-    2% 35%,
-    39% 35%
-  );
-  animation: halloweenFly ease-in-out infinite;
-  opacity: 0.28 !important;
-}
-
-@keyframes halloweenFly {
-  0% {
-    transform: translate3d(0, 0, 0) scale(0.7);
-    opacity: 0;
+    transform: translate3d(0, -5vh, 0) rotate(var(--rot-start, -6deg));
   }
   20% {
-    opacity: 0.28;
+    transform: translate3d(calc(var(--drift, 0px) * 0.35), 18vh, 0) rotate(3deg);
   }
-  50% {
-    transform: translate3d(var(--drift), -16px, 0) scale(1);
+  40% {
+    transform: translate3d(calc(var(--drift, 0px) * -0.25), 38vh, 0) rotate(-2deg);
   }
-  100% {
-    transform: translate3d(calc(var(--drift) * -0.6), 12px, 0) scale(0.75);
-    opacity: 0;
+  60% {
+    transform: translate3d(calc(var(--drift, 0px) * 0.45), 58vh, 0) rotate(4deg);
   }
-}
-
-/* ---------------- CHRISTMAS ---------------- */
-
-.christmas .particle {
-  top: -10%;
-  border-radius: 50%;
-  background: radial-gradient(circle, #ffffff 0%, #c8a44a 100%);
-  animation: christmasFall linear infinite;
-}
-
-.christmas .variant1,
-.christmas .variant2 {
-  clip-path: polygon(
-    50% 0%,
-    61% 35%,
-    98% 35%,
-    68% 57%,
-    79% 91%,
-    50% 70%,
-    21% 91%,
-    32% 57%,
-    2% 35%,
-    39% 35%
-  );
-  background: #c8a44a;
-}
-
-@keyframes christmasFall {
-  0% {
-    transform: translate3d(0, -10vh, 0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.6;
-  }
-  50% {
-    transform: translate3d(calc(var(--drift) * 0.35), 45vh, 0);
+  80% {
+    transform: translate3d(calc(var(--drift, 0px) * -0.2), 78vh, 0) rotate(-3deg);
   }
   100% {
-    transform: translate3d(var(--drift), 110vh, 0);
-    opacity: 0;
+    transform: translate3d(calc(var(--drift, 0px) * 0.15), 118vh, 0) rotate(var(--rot-end, 6deg));
   }
-}
-
-.variant0 {
-}
-.variant1 {
-}
-.variant2 {
 }
