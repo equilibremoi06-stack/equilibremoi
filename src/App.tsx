@@ -3,6 +3,7 @@ import { SeasonalLayout } from './components/seasonal/SeasonalLayout';
 import { SeasonalThemeProvider } from './hooks/useSeasonalTheme';
 import ChoixParcoursEntryPage from './pages/ChoixParcoursEntryPage';
 import HomePage from './pages/HomePage';
+import LandingPage from './pages/LandingPage';
 import QuestionnaireClassiquePage from './pages/QuestionnaireClassiquePage';
 import QuestionnaireMenopausePage from './pages/QuestionnaireMenopausePage';
 
@@ -15,7 +16,7 @@ function App() {
             <SeasonalLayout>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/landing" element={<Navigate to="/" replace />} />
+                <Route path="/landing" element={<LandingPage />} />
                 <Route path="/home" element={<Navigate to="/" replace />} />
                 <Route path="/app" element={<ChoixParcoursEntryPage />} />
                 <Route
