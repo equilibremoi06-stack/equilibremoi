@@ -62,16 +62,18 @@
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #fffaf7 0%, #fbecef 100%);
-  color: var(--em-text);
+  background:
+    radial-gradient(circle at top, rgba(242, 167, 176, 0.2) 0%, rgba(250, 247, 242, 0.95) 45%, rgba(250, 247, 242, 1) 100%);
+  font-family: 'Jost', sans-serif;
+  color: #7A8C82;
 }
 
 h1,
 h2 {
-  font-family: var(--heading);
+  font-family: 'Cormorant Garamond', serif;
   font-weight: 600;
-  color: #243126;
-  letter-spacing: -0.02em;
+  color: #1A2E22;
+  letter-spacing: 0.5px;
 }
 
 h1 {
@@ -109,4 +111,22 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+.button-primary {
+  background: linear-gradient(
+    135deg,
+    #F2A7B0,
+    #C8A44A
+  );
+  color: white;
+  border-radius: 30px;
+  padding: 14px 22px;
+  font-weight: 500;
+  box-shadow: 0 8px 20px rgba(242, 167, 176, 0.3);
+}
+
+.loader {
+  border-top-color: #F2A7B0;
+  border-right-color: #C8A44A;
 }
