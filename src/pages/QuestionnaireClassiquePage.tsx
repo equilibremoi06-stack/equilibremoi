@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BrevoTestButton from '../components/BrevoTestButton';
 import { DailyQuotePopup } from '../components/DailyQuotePopup';
 import type { DietType, Meal as EngineMeal } from '../data/mealDatabase';
 import {
@@ -1420,6 +1421,9 @@ export default function QuestionnaireClassiquePage({
               </button>
             ))}
           </nav>
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '0.4rem 0 0.8rem' }}>
+            <BrevoTestButton />
+          </div>
 
           {activeTab === 'accueil' ? (
             <>

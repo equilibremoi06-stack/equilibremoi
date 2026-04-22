@@ -1,0 +1,134 @@
+.wrap {
+  margin-top: 0.5rem;
+}
+
+.noteTrigger {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(242, 167, 176, 0.34);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 250, 247, 0.92) 100%);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 22px rgba(36, 49, 38, 0.06);
+}
+
+.noteTrigger:hover {
+  border-color: rgba(232, 154, 170, 0.5);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 12px 28px rgba(36, 49, 38, 0.08);
+}
+
+.noteTrigger:focus-visible {
+  outline: 2px solid rgba(200, 164, 74, 0.45);
+  outline-offset: 2px;
+}
+
+.noteIcon {
+  font-size: 0.75rem;
+  line-height: 1;
+  color: rgba(200, 164, 74, 0.85);
+  margin-bottom: 0.15rem;
+}
+
+.noteLabel {
+  font-size: 0.81rem;
+  line-height: 1.45;
+  color: rgba(36, 49, 38, 0.72);
+  font-weight: 500;
+}
+
+.noteHint {
+  font-size: 0.72rem;
+  color: rgba(36, 49, 38, 0.42);
+  letter-spacing: 0.02em;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(36, 49, 38, 0.36);
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1210;
+  width: min(92vw, 420px);
+  max-height: min(80vh, 520px);
+  overflow: auto;
+  padding: 1.45rem 1.3rem 1.3rem;
+  border-radius: var(--eq-card-radius);
+  background: linear-gradient(168deg, #fffaf7 0%, #f8f1ea 100%);
+  border: var(--eq-card-border);
+  box-shadow: var(--eq-card-shadow);
+}
+
+.modalTitle {
+  margin: 0 0 0.65rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1a2420;
+}
+
+.modalBody {
+  margin: 0 0 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.58;
+  color: var(--eq-text-muted);
+}
+
+.modalClose {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #fff;
+  cursor: pointer;
+  background: var(--eq-btn-gradient);
+  box-shadow: var(--eq-btn-shadow);
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease,
+    filter 0.2s ease;
+}
+
+.modalClose:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--eq-btn-shadow-hover);
+  filter: saturate(1.05);
+}
+
+.modalClose:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .modal {
+    width: min(94vw, 100%);
+    padding: 1.2rem 1rem 1.1rem;
+  }
+}
