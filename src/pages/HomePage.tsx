@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import BrevoTestButton from '../components/BrevoTestButton';
 import styles from './HomePage.module.css';
 
 export default function HomePage() {
@@ -21,9 +20,6 @@ export default function HomePage() {
         <p className={styles.heroLandingLink}>
           <Link to="/auth">Je commence ✨</Link>
         </p>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <BrevoTestButton />
-        </div>
       </section>
 
       <section className={styles.promise} aria-labelledby="promise-heading">

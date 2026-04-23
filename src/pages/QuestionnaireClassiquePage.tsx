@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BrevoTestButton from '../components/BrevoTestButton';
 import { DailyQuotePopup } from '../components/DailyQuotePopup';
 import type { DietType, Meal as EngineMeal } from '../data/mealDatabase';
 import {
@@ -19,7 +18,8 @@ import {
   type RecipeCatalogItem,
   type RecipeMealTime,
 } from '../data/recipesHub';
-import { getCurrentUser } from '../lib/authFlow';
+import { getCurrentUser, resolveUserAccess } from '../lib/authFlow';
+import { sendProgramReadyEmail } from '../lib/emailEvents';
 import { buildProgressSummary, type WeightEntry } from '../data/progressTracking';
 import {
   buildPersonalizationSummary,
@@ -69,7 +69,6 @@ const APP_TABS: { id: AppTab; label: string }[] = [
 ];
 
 const APP_TAB_IDS: AppTab[] = APP_TABS.map((t) => t.id);
-const ADMIN_EMAIL = 'equilibremoi.06@gmail.com';
 
 function isAppTab(value: string | undefined): value is AppTab {
   return Boolean(value && APP_TAB_IDS.includes(value as AppTab));
@@ -294,6 +293,18 @@ function formatWeeksToTimelineLabel(weeks: number): string {
   return `${months.toString().replace('.', ',')} mois`;
 }
 
+function buildProgramSignature(weeks: GeneratedWeek[]): string {
+  if (!weeks.length) return '';
+  const compact = weeks.map((week) =>
+    week.days.map((day) => [day.breakfast?.id ?? '', day.lunch?.id ?? '', day.dinner?.id ?? ''].join('|')).join('~')
+  ).join('||');
+  let hash = 5381;
+  for (let i = 0; i < compact.length; i += 1) {
+    hash = (hash * 33) ^ compact.charCodeAt(i);
+  }
+  return `p${Math.abs(hash >>> 0)}-${weeks.length}`;
+}
+
 type QuestionnaireClassiquePageProps = {
   /** questionnaire : parcours complet. app : accueil principal (données restaurées). */
   flow?: 'questionnaire' | 'app';
@@ -356,7 +367,7 @@ export default function QuestionnaireClassiquePage({
   const [recipeCatalog, setRecipeCatalog] = useState<RecipeCatalogItem[]>([]);
   const [selectedCatalogRecipe, setSelectedCatalogRecipe] = useState<RecipeCatalogItem | null>(null);
   const [recipesAdminEnabled, setRecipesAdminEnabled] = useState(false);
-  const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [accessState, setAccessState] = useState({ isPremium: false, isAdmin: false });
   const [adminRecipeDraft, setAdminRecipeDraft] = useState<RecipeCatalogItem>(() => createEmptyAdminRecipe());
   const [adminEditingId, setAdminEditingId] = useState<string | null>(null);
   const [recipeImageErrors, setRecipeImageErrors] = useState<Record<string, boolean>>({});
@@ -376,6 +387,7 @@ export default function QuestionnaireClassiquePage({
   const navigate = useNavigate();
 
   const hydrateProgramOnceRef = useRef(false);
+  const programReadyEmailPendingRef = useRef<string | null>(null);
 
   const analyzingPayloadRef = useRef({
     step,
@@ -433,16 +445,44 @@ export default function QuestionnaireClassiquePage({
     };
   }, [selectedCatalogRecipe]);
 
+  const programEmailSignature = useMemo(() => buildProgramSignature(programWeeks), [programWeeks]);
+
+  useEffect(() => {
+    if (phase !== 'result') return;
+    if (!programEmailSignature) return;
+    if (programReadyEmailPendingRef.current === programEmailSignature) return;
+    programReadyEmailPendingRef.current = programEmailSignature;
+    getCurrentUser()
+      .then((user) => {
+        if (!user?.email) return;
+        const key = `program_ready_email_sent_${user.id}_${programEmailSignature}`;
+        if (window.localStorage.getItem(key) === 'true') return;
+        return sendProgramReadyEmail(user.email)
+          .then(() => {
+            window.localStorage.setItem(key, 'true');
+          })
+          .catch((error) => {
+            console.error('[QuestionnaireClassiquePage] envoi email programme prêt échoué', error);
+            programReadyEmailPendingRef.current = null;
+          });
+      })
+      .catch((error) => {
+        console.error('[QuestionnaireClassiquePage] récupération utilisateur impossible', error);
+        programReadyEmailPendingRef.current = null;
+      });
+  }, [phase, programEmailSignature]);
+
   useEffect(() => {
     getCurrentUser()
       .then((user) => {
-        const email = user?.email?.toLowerCase?.() ?? '';
-        setCurrentUserEmail(email);
-        setRecipesAdminEnabled(email === ADMIN_EMAIL || canAccessRecipesAdmin(user?.email));
+        setRecipesAdminEnabled(canAccessRecipesAdmin(user));
+        return resolveUserAccess(user).then((nextAccess) => {
+          setAccessState(nextAccess);
+        });
       })
       .catch(() => {
-        setCurrentUserEmail('');
         setRecipesAdminEnabled(false);
+        setAccessState({ isPremium: false, isAdmin: false });
       });
     setRecipeCatalog(listRecipesForApp());
   }, []);
@@ -566,9 +606,9 @@ export default function QuestionnaireClassiquePage({
     return 'Dîner';
   };
 
-  const isPremium = useMemo(() => localStorage.getItem('isPremium') === 'true', []);
-  const isAdminUser = currentUserEmail === ADMIN_EMAIL;
-  const hasPremiumAccess = isPremium || isAdminUser;
+  const isAdminUser = accessState.isAdmin;
+  const isPremiumUser = accessState.isPremium;
+  const hasPremiumAccess = isPremiumUser;
   const parsedKg = Number(targetKg);
   const timeframeWeeks = toTimelineWeeks(timeline);
   const targetTooFast = goalValidationResult?.isAdjusted ?? false;
@@ -661,10 +701,10 @@ export default function QuestionnaireClassiquePage({
       allergies: splitKeywords(allergies),
       dislikes: splitKeywords(dislikes),
       budget: budgetToNumber(budget),
-      isPremium: hasPremiumAccess,
+      isPremium: isPremiumUser,
       prepStyle: rhythm === 'Très actif' ? 'quick' : 'flex',
     }),
-    [allergies, budget, dietRule, dislikes, hasPremiumAccess, rhythm],
+    [allergies, budget, dietRule, dislikes, isPremiumUser, rhythm],
   );
 
   const generatedProgram = useMemo<GeneratedWeek[]>(
@@ -1421,9 +1461,6 @@ export default function QuestionnaireClassiquePage({
               </button>
             ))}
           </nav>
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '0.4rem 0 0.8rem' }}>
-            <BrevoTestButton />
-          </div>
 
           {activeTab === 'accueil' ? (
             <>
