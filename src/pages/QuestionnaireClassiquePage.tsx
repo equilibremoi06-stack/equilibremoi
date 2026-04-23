@@ -569,6 +569,17 @@ export default function QuestionnaireClassiquePage({
   const isAdminUser = accessState.isAdmin;
   const isPremiumUser = accessState.isPremium;
   const hasPremiumAccess = isPremiumUser;
+  const shouldShowPremiumCta = !isPremiumUser && !isAdminUser;
+
+  useEffect(() => {
+    console.log('[roles-debug] QuestionnaireClassiquePage', {
+      accessState,
+      isAdminUser,
+      isPremiumUser,
+      hasPremiumAccess,
+      shouldShowPremiumCta,
+    });
+  }, [accessState, isAdminUser, isPremiumUser, hasPremiumAccess, shouldShowPremiumCta]);
   const parsedKg = Number(targetKg);
   const timeframeWeeks = toTimelineWeeks(timeline);
   const targetTooFast = goalValidationResult?.isAdjusted ?? false;
@@ -1502,7 +1513,7 @@ export default function QuestionnaireClassiquePage({
                 ) : null}
               </div>
 
-              {!hasPremiumAccess ? (
+              {shouldShowPremiumCta ? (
                 <div className={`${styles.premiumCallout} ${styles.premiumBlock} ${styles.fadeInSoft}`}>
                   <div className={styles.sectionAccentBar} aria-hidden />
                   <p className={`${styles.premiumCalloutTitle} ${styles.premiumTitle}`}>Passe au Premium ✨</p>
@@ -2416,7 +2427,7 @@ export default function QuestionnaireClassiquePage({
             </p>
           </div>
 
-          {!hasPremiumAccess ? (
+          {shouldShowPremiumCta ? (
             <div className={`${styles.premiumCallout} ${styles.premiumBlock} ${styles.fadeInSoft}`}>
               <div className={styles.sectionAccentBar} aria-hidden />
               <p className={styles.premiumCalloutTitle}>Ton programme est prêt… mais il va encore plus loin ✨</p>
