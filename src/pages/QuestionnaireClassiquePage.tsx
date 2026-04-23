@@ -614,7 +614,11 @@ export default function QuestionnaireClassiquePage({
   const isAdminUser = accessState.isAdmin;
   const isPremiumUser = accessState.isPremium;
   const hasPremiumAccess = isPremiumUser;
-  const shouldShowPremiumCta = accessStateResolved && !isPremiumUser && !isAdminUser;
+  const shouldShowPremiumCta =
+    accessStateResolved === true &&
+    rolesLoading === false &&
+    isAdminUser !== true &&
+    isPremiumUser !== true;
 
   useEffect(() => {
     console.log('[roles-debug] role resolution state', {
@@ -1572,6 +1576,17 @@ export default function QuestionnaireClassiquePage({
                   </p>
                   <p className={styles.evolveNote}>Plus de menus, plus de flexibilité, plus de clarté</p>
                   <div className={styles.resultActions}>
+                    {(() => {
+                      console.log('[CTA-PREMIUM-RENDER]', {
+                        userEmail: currentAuthUser?.email ?? null,
+                        isAdminUser,
+                        isPremiumUser,
+                        shouldShowPremiumCta,
+                        accessState,
+                        accessStateResolved,
+                      });
+                      return null;
+                    })()}
                     <button type="button" className={`${styles.buttonPrimary} ${styles.premiumButton}`} onClick={handleUnlockPremium}>
                       Je débloque mon programme
                     </button>

@@ -1,0 +1,49 @@
+.premiumPage {
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.backButton {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(242, 167, 176, 0.25);
+  color: #8e5166;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 18px;
+  box-shadow: 0 6px 18px rgba(242, 167, 176, 0.12);
+  cursor: pointer;
+}
+
+.premiumCard {
+  background: white;
+  border-radius: 20px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.premiumCard.highlight {
+  background: linear-gradient(135deg, #f2a7b0, #f7c6cc);
+  color: white;
+}
+
+.premiumBtn {
+  background: linear-gradient(90deg, #f2a7b0, #e48c9a);
+  color: white;
+  border-radius: 30px;
+  padding: 15px;
+  font-size: 16px;
+  margin-top: 20px;
+  border: none;
+  cursor: pointer;
+}
+
+.premiumNote {
+  margin-top: 10px;
+  color: #7a8c82;
+}
