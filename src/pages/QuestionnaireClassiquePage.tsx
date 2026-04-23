@@ -358,6 +358,11 @@ export default function QuestionnaireClassiquePage({
   const [recipesAdminEnabled, setRecipesAdminEnabled] = useState(false);
   const [accessState, setAccessState] = useState({ isPremium: false, isAdmin: false });
   const [accessStateResolved, setAccessStateResolved] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(true);
+  const [currentAuthUser, setCurrentAuthUser] = useState<{
+    email: string | null;
+    app_metadata: Record<string, unknown> | null;
+  } | null>(null);
   const [adminRecipeDraft, setAdminRecipeDraft] = useState<RecipeCatalogItem>(() => createEmptyAdminRecipe());
   const [adminEditingId, setAdminEditingId] = useState<string | null>(null);
   const [recipeImageErrors, setRecipeImageErrors] = useState<Record<string, boolean>>({});
@@ -440,9 +445,20 @@ export default function QuestionnaireClassiquePage({
 
     const resolveAccess = async () => {
       setAccessStateResolved(false);
+      setRolesLoading(true);
       try {
+        const {
+          data: { session },
+        } = await (supabase?.auth.getSession() ?? Promise.resolve({ data: { session: null } }));
+        if (session) {
+          await supabase?.auth.refreshSession();
+        }
         const user = await getCurrentUser();
         if (!mounted) return;
+        setCurrentAuthUser({
+          email: user?.email ?? null,
+          app_metadata: (user?.app_metadata as Record<string, unknown> | null | undefined) ?? null,
+        });
         console.log('[roles-debug] auth user snapshot', {
           email: user?.email ?? null,
           app_metadata: user?.app_metadata ?? null,
@@ -451,12 +467,15 @@ export default function QuestionnaireClassiquePage({
         const nextAccess = await resolveUserAccess(user);
         if (!mounted) return;
         setAccessState(nextAccess);
+        setAccessStateResolved(true);
       } catch {
         if (!mounted) return;
         setRecipesAdminEnabled(false);
         setAccessState({ isPremium: false, isAdmin: false });
+        setCurrentAuthUser(null);
+        setAccessStateResolved(false);
       } finally {
-        if (mounted) setAccessStateResolved(true);
+        if (mounted) setRolesLoading(false);
       }
     };
 
@@ -599,14 +618,18 @@ export default function QuestionnaireClassiquePage({
 
   useEffect(() => {
     console.log('[roles-debug] role resolution state', {
+      user: currentAuthUser,
+      userEmail: currentAuthUser?.email ?? null,
+      userAppMetadata: currentAuthUser?.app_metadata ?? null,
       accessState,
       isAdminUser,
       isPremiumUser,
       shouldShowPremiumCta,
-      loading: !accessStateResolved,
+      loading: rolesLoading,
       resolved: accessStateResolved,
+      accessResolved: accessStateResolved,
     });
-  }, [accessState, isAdminUser, isPremiumUser, shouldShowPremiumCta, accessStateResolved]);
+  }, [currentAuthUser, accessState, isAdminUser, isPremiumUser, shouldShowPremiumCta, accessStateResolved, rolesLoading]);
   const parsedKg = Number(targetKg);
   const timeframeWeeks = toTimelineWeeks(timeline);
   const targetTooFast = goalValidationResult?.isAdjusted ?? false;
