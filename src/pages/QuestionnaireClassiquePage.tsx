@@ -619,6 +619,7 @@ export default function QuestionnaireClassiquePage({
     rolesLoading === false &&
     isAdminUser !== true &&
     isPremiumUser !== true;
+  const shouldShowAdminCtaDebug = accessStateResolved === true && rolesLoading === false && isAdminUser === true;
 
   useEffect(() => {
     console.log('[roles-debug] role resolution state', {
@@ -1592,6 +1593,10 @@ export default function QuestionnaireClassiquePage({
                     </button>
                   </div>
                 </div>
+              ) : shouldShowAdminCtaDebug ? (
+                <div className={`${styles.premiumCallout} ${styles.premiumBlock} ${styles.fadeInSoft}`}>
+                  <p className={styles.premiumCalloutTitle}>ADMIN MODE - CTA PREMIUM MASQUÉ</p>
+                </div>
               ) : null}
             </>
           ) : null}
@@ -2501,6 +2506,10 @@ export default function QuestionnaireClassiquePage({
               <p>🌿 plus de flexibilité pour adapter tes repas</p>
               <p>🌿 une expérience encore plus personnalisée</p>
               <p>C’est ce qui fait toute la différence pour rester régulière et atteindre ton objectif 💛</p>
+            </div>
+          ) : shouldShowAdminCtaDebug ? (
+            <div className={`${styles.premiumCallout} ${styles.premiumBlock} ${styles.fadeInSoft}`}>
+              <p className={styles.premiumCalloutTitle}>ADMIN MODE - CTA PREMIUM MASQUÉ</p>
             </div>
           ) : null}
 
