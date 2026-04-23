@@ -20,6 +20,7 @@ import {
 } from '../data/recipesHub';
 import { getCurrentUser, resolveUserAccess } from '../lib/authFlow';
 import { sendProgramReadyEmail } from '../lib/emailEvents';
+import { getSupabase } from '../lib/supabaseClient';
 import { buildProgressSummary, type WeightEntry } from '../data/progressTracking';
 import {
   buildPersonalizationSummary,
@@ -356,6 +357,7 @@ export default function QuestionnaireClassiquePage({
   const [selectedCatalogRecipe, setSelectedCatalogRecipe] = useState<RecipeCatalogItem | null>(null);
   const [recipesAdminEnabled, setRecipesAdminEnabled] = useState(false);
   const [accessState, setAccessState] = useState({ isPremium: false, isAdmin: false });
+  const [accessStateResolved, setAccessStateResolved] = useState(false);
   const [adminRecipeDraft, setAdminRecipeDraft] = useState<RecipeCatalogItem>(() => createEmptyAdminRecipe());
   const [adminEditingId, setAdminEditingId] = useState<string | null>(null);
   const [recipeImageErrors, setRecipeImageErrors] = useState<Record<string, boolean>>({});
@@ -433,18 +435,42 @@ export default function QuestionnaireClassiquePage({
   }, [selectedCatalogRecipe]);
 
   useEffect(() => {
-    getCurrentUser()
-      .then((user) => {
-        setRecipesAdminEnabled(canAccessRecipesAdmin(user));
-        return resolveUserAccess(user).then((nextAccess) => {
-          setAccessState(nextAccess);
+    const supabase = getSupabase();
+    let mounted = true;
+
+    const resolveAccess = async () => {
+      setAccessStateResolved(false);
+      try {
+        const user = await getCurrentUser();
+        if (!mounted) return;
+        console.log('[roles-debug] auth user snapshot', {
+          email: user?.email ?? null,
+          app_metadata: user?.app_metadata ?? null,
         });
-      })
-      .catch(() => {
+        setRecipesAdminEnabled(canAccessRecipesAdmin(user));
+        const nextAccess = await resolveUserAccess(user);
+        if (!mounted) return;
+        setAccessState(nextAccess);
+      } catch {
+        if (!mounted) return;
         setRecipesAdminEnabled(false);
         setAccessState({ isPremium: false, isAdmin: false });
-      });
+      } finally {
+        if (mounted) setAccessStateResolved(true);
+      }
+    };
+
+    void resolveAccess();
+
+    const { data: authSub } = supabase?.auth.onAuthStateChange(() => {
+      void resolveAccess();
+    }) ?? { data: { subscription: { unsubscribe: () => undefined } } };
+
     setRecipeCatalog(listRecipesForApp());
+    return () => {
+      mounted = false;
+      authSub.subscription.unsubscribe();
+    };
   }, []);
 
   const refreshRecipeCatalog = () => {
@@ -569,17 +595,18 @@ export default function QuestionnaireClassiquePage({
   const isAdminUser = accessState.isAdmin;
   const isPremiumUser = accessState.isPremium;
   const hasPremiumAccess = isPremiumUser;
-  const shouldShowPremiumCta = !isPremiumUser && !isAdminUser;
+  const shouldShowPremiumCta = accessStateResolved && !isPremiumUser && !isAdminUser;
 
   useEffect(() => {
-    console.log('[roles-debug] QuestionnaireClassiquePage', {
+    console.log('[roles-debug] role resolution state', {
       accessState,
       isAdminUser,
       isPremiumUser,
-      hasPremiumAccess,
       shouldShowPremiumCta,
+      loading: !accessStateResolved,
+      resolved: accessStateResolved,
     });
-  }, [accessState, isAdminUser, isPremiumUser, hasPremiumAccess, shouldShowPremiumCta]);
+  }, [accessState, isAdminUser, isPremiumUser, shouldShowPremiumCta, accessStateResolved]);
   const parsedKg = Number(targetKg);
   const timeframeWeeks = toTimelineWeeks(timeline);
   const targetTooFast = goalValidationResult?.isAdjusted ?? false;

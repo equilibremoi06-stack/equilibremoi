@@ -1,4 +1,5 @@
 import { recipeLibrary } from './recipeLibrary';
+import { isUserAdminFromMetadata } from '../lib/authFlow';
 
 export type RecipeMealTime = 'matin' | 'midi' | 'soir' | 'collation';
 
@@ -53,9 +54,7 @@ const baseRecipes: RecipeCatalogItem[] = recipeLibrary.slice(0, 8).map((r, idx) 
 }));
 
 export function canAccessRecipesAdmin(user: { app_metadata?: Record<string, unknown> | null } | null | undefined): boolean {
-  const role = user?.app_metadata?.role;
-  const isAdmin = user?.app_metadata?.is_admin;
-  return role === 'admin' || isAdmin === true;
+  return isUserAdminFromMetadata(user);
 }
 
 export function listRecipesForApp(): RecipeCatalogItem[] {
