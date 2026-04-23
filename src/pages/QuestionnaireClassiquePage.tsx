@@ -293,18 +293,6 @@ function formatWeeksToTimelineLabel(weeks: number): string {
   return `${months.toString().replace('.', ',')} mois`;
 }
 
-function buildProgramSignature(weeks: GeneratedWeek[]): string {
-  if (!weeks.length) return '';
-  const compact = weeks.map((week) =>
-    week.days.map((day) => [day.breakfast?.id ?? '', day.lunch?.id ?? '', day.dinner?.id ?? ''].join('|')).join('~')
-  ).join('||');
-  let hash = 5381;
-  for (let i = 0; i < compact.length; i += 1) {
-    hash = (hash * 33) ^ compact.charCodeAt(i);
-  }
-  return `p${Math.abs(hash >>> 0)}-${weeks.length}`;
-}
-
 type QuestionnaireClassiquePageProps = {
   /** questionnaire : parcours complet. app : accueil principal (données restaurées). */
   flow?: 'questionnaire' | 'app';
@@ -387,7 +375,6 @@ export default function QuestionnaireClassiquePage({
   const navigate = useNavigate();
 
   const hydrateProgramOnceRef = useRef(false);
-  const programReadyEmailPendingRef = useRef<string | null>(null);
 
   const analyzingPayloadRef = useRef({
     step,
@@ -444,33 +431,6 @@ export default function QuestionnaireClassiquePage({
       document.body.style.overflow = previousOverflow;
     };
   }, [selectedCatalogRecipe]);
-
-  const programEmailSignature = useMemo(() => buildProgramSignature(programWeeks), [programWeeks]);
-
-  useEffect(() => {
-    if (phase !== 'result') return;
-    if (!programEmailSignature) return;
-    if (programReadyEmailPendingRef.current === programEmailSignature) return;
-    programReadyEmailPendingRef.current = programEmailSignature;
-    getCurrentUser()
-      .then((user) => {
-        if (!user?.email) return;
-        const key = `program_ready_email_sent_${user.id}_${programEmailSignature}`;
-        if (window.localStorage.getItem(key) === 'true') return;
-        return sendProgramReadyEmail(user.email)
-          .then(() => {
-            window.localStorage.setItem(key, 'true');
-          })
-          .catch((error) => {
-            console.error('[QuestionnaireClassiquePage] envoi email programme prêt échoué', error);
-            programReadyEmailPendingRef.current = null;
-          });
-      })
-      .catch((error) => {
-        console.error('[QuestionnaireClassiquePage] récupération utilisateur impossible', error);
-        programReadyEmailPendingRef.current = null;
-      });
-  }, [phase, programEmailSignature]);
 
   useEffect(() => {
     getCurrentUser()
@@ -634,6 +594,35 @@ export default function QuestionnaireClassiquePage({
       window.clearInterval(interval);
       const p = analyzingPayloadRef.current;
       if (flow === 'questionnaire') {
+        const programSignature = [
+          p.targetKg,
+          p.timeline,
+          p.diet,
+          p.allergies,
+          p.dislikes,
+          p.budget,
+          p.rhythm,
+        ]
+          .map((value) => String(value ?? '').trim().toLowerCase())
+          .join('|');
+        if (programSignature) {
+          void getCurrentUser()
+            .then((user) => {
+              if (!user?.email) return;
+              const key = `program_ready_email_sent_${user.id}_${programSignature}`;
+              if (window.localStorage.getItem(key) === 'true') return;
+              return sendProgramReadyEmail()
+                .then(() => {
+                  window.localStorage.setItem(key, 'true');
+                })
+                .catch((error) => {
+                  console.error('[QuestionnaireClassiquePage] envoi email programme prêt échoué', error);
+                });
+            })
+            .catch((error) => {
+              console.error('[QuestionnaireClassiquePage] récupération utilisateur impossible', error);
+            });
+        }
         const snap: ClassiqueSnapshotV1 = {
           v: 1,
           phase: 'result',
