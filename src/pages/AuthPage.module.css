@@ -1,0 +1,187 @@
+.page {
+  flex: 1;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 4rem) 1rem;
+  background: var(--eq-page-bg);
+  color: var(--eq-text);
+}
+
+.wrap {
+  width: min(100%, 28rem);
+  text-align: center;
+}
+
+.logo {
+  margin: 0 0 0.65rem;
+  color: var(--eq-or);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: #16231b;
+}
+
+.subtitle {
+  margin: 0.9rem auto 1.6rem;
+  color: var(--eq-text-muted);
+  line-height: 1.7;
+}
+
+.card,
+.verifyCard {
+  padding: clamp(1.4rem, 4vw, 2rem);
+  border: var(--eq-card-border);
+  border-radius: var(--eq-card-radius);
+  background: linear-gradient(168deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 246, 0.94));
+  box-shadow: var(--eq-card-shadow);
+  text-align: left;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+  padding: 0.35rem;
+  border-radius: 999px;
+  background: rgba(242, 167, 176, 0.12);
+}
+
+.tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 0.9rem;
+  background: transparent;
+  color: var(--eq-text-muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.tabActive {
+  background: #fff;
+  color: var(--eq-text);
+  box-shadow: 0 8px 18px rgba(36, 49, 38, 0.08);
+}
+
+.form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid rgba(242, 167, 176, 0.35);
+  border-radius: 18px;
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--eq-text);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus {
+  border-color: rgba(200, 164, 74, 0.55);
+  box-shadow: 0 0 0 4px rgba(200, 164, 74, 0.12);
+}
+
+.passwordField {
+  position: relative;
+}
+
+.passwordField .input {
+  padding-right: 4.5rem;
+}
+
+.eyeToggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--eq-text-soft);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.button {
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.95rem 1.25rem;
+  color: #fff;
+  background: var(--eq-btn-gradient);
+  box-shadow: var(--eq-btn-shadow);
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--eq-btn-shadow-hover);
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.linkBtn {
+  display: inline-flex;
+  margin-top: 0.8rem;
+  color: var(--eq-corail-deep);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.error,
+.ok {
+  margin: 0;
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.error {
+  background: #fff1f2;
+  color: #b4233a;
+}
+
+.ok {
+  background: #f0fdf4;
+  color: #287044;
+}
+
+.note,
+.verifySmall,
+.verifyEmail {
+  margin: 1rem 0 0;
+  color: var(--eq-text-soft);
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.verifyIcon {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+}

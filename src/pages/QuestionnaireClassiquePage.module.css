@@ -1,0 +1,500 @@
+.page {
+  flex: 1;
+  min-height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(1.6rem, 4vw, 2.75rem) clamp(1rem, 3vw, 1.35rem) clamp(2.75rem, 6vw, 3.75rem);
+  background: var(--eq-page-bg);
+  color: var(--eq-text);
+  font-family: var(--sans-ui, system-ui, sans-serif);
+}
+
+.card,
+.summaryCard,
+.premiumCallout,
+.recipesAdminPanel,
+.recipeSheet,
+.recipeModalCard {
+  border: var(--eq-card-border);
+  border-radius: var(--eq-card-radius);
+  background: linear-gradient(168deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 246, 0.95));
+  box-shadow: var(--eq-card-shadow);
+}
+
+.card {
+  width: min(100%, 30rem);
+  padding: clamp(1.65rem, 4vw, 2.25rem);
+  text-align: left;
+}
+
+.resultsContainer {
+  width: min(100%, 68rem);
+}
+
+.h2,
+.blockTitle,
+.highlightTitle,
+.premiumCalloutTitle,
+.recipeSheetTitle,
+.recipeModalTitle,
+.recipesAdminTitle {
+  margin: 0 0 0.65rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  color: #17241c;
+}
+
+.h2 {
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+}
+
+.blockTitle,
+.premiumCalloutTitle,
+.recipeSheetTitle,
+.recipeModalTitle {
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+.intro,
+.softNote,
+.hint,
+.evolveNote,
+.loaderText,
+.loaderSub,
+.recipeSheetDesc,
+.recipeSheetMeta,
+.recipeModalSubtitle,
+.recipesMealSectionEmpty {
+  color: var(--eq-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.softNote,
+.hint,
+.evolveNote {
+  color: var(--eq-text-soft);
+}
+
+.stepMeta {
+  display: inline-flex;
+  margin: 0 0 0.85rem;
+  color: var(--eq-or);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.actions,
+.resultActions,
+.humanHelpActions,
+.recipesAdminActions,
+.optionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.button,
+.buttonPrimary,
+.buttonGhost,
+.writeButton,
+.premiumButton,
+.copyEmailButton,
+.pillButton,
+.appTabButton,
+.recipeSheetTopClose {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.button,
+.buttonPrimary,
+.writeButton,
+.premiumButton {
+  padding: 0.9rem 1.25rem;
+  color: #fff;
+  background: var(--eq-btn-gradient);
+  box-shadow: var(--eq-btn-shadow);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.button:hover,
+.buttonPrimary:hover,
+.writeButton:hover,
+.premiumButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--eq-btn-shadow-hover);
+}
+
+.buttonGhost,
+.copyEmailButton,
+.pillButton,
+.appTabButton,
+.recipeSheetTopClose {
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(242, 167, 176, 0.32);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--eq-text);
+}
+
+.buttonGhost:hover,
+.copyEmailButton:hover,
+.pillButton:hover,
+.appTabButton:hover {
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(36, 49, 38, 0.08);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid rgba(242, 167, 176, 0.35);
+  border-radius: 18px;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--eq-text);
+  outline: none;
+}
+
+.textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: rgba(200, 164, 74, 0.55);
+  box-shadow: 0 0 0 4px rgba(200, 164, 74, 0.12);
+}
+
+.loaderWrap {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.loaderRing {
+  width: 4rem;
+  height: 4rem;
+  border: 4px solid rgba(242, 167, 176, 0.25);
+  border-top-color: var(--eq-rose-blush);
+  border-right-color: var(--eq-or);
+  border-radius: 999px;
+  animation: spin 1s linear infinite;
+}
+
+.loaderDynamicLine {
+  color: var(--eq-text);
+  font-weight: 800;
+}
+
+.appTabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.appTabButtonActive,
+.pillButtonActive,
+.emotionBtnActive {
+  color: #fff;
+  background: var(--eq-btn-gradient);
+  box-shadow: var(--eq-btn-shadow);
+}
+
+.summaryCard,
+.premiumCallout,
+.recipesAdminPanel {
+  position: relative;
+  padding: clamp(1.25rem, 3vw, 1.8rem);
+  margin: 0 0 1.2rem;
+  text-align: left;
+}
+
+.cardHighlight,
+.premiumBlock {
+  background: linear-gradient(158deg, rgba(255, 255, 255, 0.99), rgba(253, 238, 242, 0.66));
+}
+
+.sectionAccentBar {
+  width: 4.5rem;
+  height: 3px;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--eq-or), var(--eq-rose-blush));
+  box-shadow: 0 0 16px rgba(232, 154, 170, 0.45);
+}
+
+.fadeInSoft {
+  animation: fadeInSoft 0.45s ease both;
+}
+
+.emotionsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.emotionBtn {
+  border: 1px solid rgba(242, 167, 176, 0.32);
+  border-radius: 18px;
+  padding: 0.9rem 0.7rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--eq-text);
+  cursor: pointer;
+}
+
+.emotionMessage,
+.supportEmailBlock {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--eq-text-muted);
+}
+
+.supportEmail {
+  font-weight: 800;
+  color: var(--eq-text);
+}
+
+.recipesAdminHead,
+.recipesAdminGrid,
+.recipesAdminForm,
+.recipesAdminList,
+.recipesAdminListRow {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.recipesAdminGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.recipesAdminHead,
+.recipesAdminListRow {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.recipesAdminOwner,
+.adminCheckboxRow {
+  color: var(--eq-text-soft);
+  font-size: 0.85rem;
+}
+
+.adminCheckboxRow {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.recipeVisualPlaceholder,
+.recipeSheetImage,
+.recipeModalImageWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(242, 167, 176, 0.22), rgba(200, 164, 74, 0.16));
+  box-shadow: 0 14px 34px rgba(36, 49, 38, 0.08);
+}
+
+.recipeVisualPlaceholder {
+  min-height: 10rem;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.recipeVisualGlow {
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(circle, rgba(255,255,255,0.8), transparent 62%);
+}
+
+.recipeVisualIcon,
+.recipeVisualLabel {
+  position: relative;
+  z-index: 1;
+}
+
+.recipeVisualIcon {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.recipeVisualLabel {
+  margin: 0.3rem 0 0;
+  color: var(--eq-text);
+  font-weight: 800;
+}
+
+.recipeSheetOverlay,
+.recipeModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(26, 36, 32, 0.38);
+  backdrop-filter: blur(8px);
+  animation: fadeInSoft 0.18s ease both;
+}
+
+.recipeSheet,
+.recipeModalCard {
+  width: min(94vw, 42rem);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  padding: clamp(1rem, 3vw, 1.6rem);
+}
+
+.recipeSheetBody,
+.recipeModalBody {
+  display: grid;
+  gap: 1rem;
+}
+
+.recipeSheetTopClose {
+  float: right;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+}
+
+.recipeSheetSection,
+.recipeModalSectionTitle {
+  margin: 1rem 0 0.5rem;
+  color: var(--eq-text);
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.recipeSheetList,
+.recipeSheetSteps,
+.recipeModalListPremium,
+.recipeModalSteps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--eq-text-muted);
+  line-height: 1.65;
+}
+
+.recipeModalBadges,
+.recipeModalHeaderRow,
+.recipeModalSectionHeading,
+.recipeIngredientRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.recipeModalBadges {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.recipeModalBadgeMeal,
+.recipeModalBadgeSeason,
+.recipeModalBadgePill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.38rem 0.7rem;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--eq-text-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.recipeModalHeaderEmoji {
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 999px;
+  background: rgba(242, 167, 176, 0.18);
+}
+
+.recipeIngredientBullet,
+.recipeModalSectionMark {
+  color: var(--eq-or);
+  font-weight: 900;
+}
+
+.recipeIngredientName {
+  color: var(--eq-text);
+  font-weight: 800;
+}
+
+.recipeIngredientDetail,
+.recipeModalPortionNote,
+.recipeModalPremiumLock {
+  display: block;
+  color: var(--eq-text-soft);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.recipeModalTopAccent {
+  width: 4.5rem;
+  height: 3px;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--eq-or), var(--eq-rose-blush));
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeInSoft {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .resultsContainer {
+    width: 100%;
+  }
+
+  .recipesAdminGrid,
+  .recipesAdminHead,
+  .recipesAdminListRow,
+  .emotionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions,
+  .resultActions,
+  .humanHelpActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,60 @@
+:root {
+  --eq-rose-poudre: #f2a7b0;
+  --eq-rose-blush: #e89aaa;
+  --eq-rose-nude: #f6d6dc;
+  --eq-rose-mist: #fdeef2;
+  --eq-creme: #f8f1ea;
+  --eq-beige-warm: #f0e6dc;
+  --eq-ivory: #fffaf7;
+  --eq-or: #c8a44a;
+  --eq-or-soft: rgba(200, 164, 74, 0.35);
+  --eq-corail: #d9726b;
+  --eq-corail-deep: #c75a54;
+  --eq-text: #243126;
+  --eq-text-muted: rgba(36, 49, 38, 0.62);
+  --eq-text-soft: rgba(36, 49, 38, 0.46);
+
+  --em-text: var(--eq-text);
+  --em-ivory: var(--eq-ivory);
+  --em-gold: var(--eq-or);
+  --em-rose: var(--eq-rose-poudre);
+  --em-rose-blush: var(--eq-rose-blush);
+  --em-shadow-soft: 0 18px 48px rgba(36, 49, 38, 0.08);
+  --em-shadow-strong: 0 28px 64px rgba(36, 49, 38, 0.13);
+
+  --eq-page-bg: linear-gradient(
+    165deg,
+    #efe8e0 0%,
+    var(--eq-creme) 22%,
+    #fff5f7 52%,
+    var(--eq-rose-mist) 78%,
+    var(--eq-ivory) 100%
+  );
+
+  --eq-btn-gradient: linear-gradient(
+    138deg,
+    #ebb4bc 0%,
+    var(--eq-rose-blush) 30%,
+    var(--eq-corail) 74%,
+    var(--eq-corail-deep) 100%
+  );
+  --eq-btn-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 8px 18px rgba(200, 90, 88, 0.2),
+    0 18px 38px rgba(170, 75, 85, 0.24);
+  --eq-btn-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 12px 24px rgba(190, 80, 78, 0.28),
+    0 24px 48px rgba(150, 65, 72, 0.22);
+
+  --eq-card-radius: 26px;
+  --eq-card-border: 1px solid rgba(242, 167, 176, 0.38);
+  --eq-card-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.98) inset,
+    0 10px 24px rgba(36, 49, 38, 0.06),
+    0 28px 56px rgba(90, 45, 55, 0.09);
+  --eq-card-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 16px 32px rgba(36, 49, 38, 0.08),
+    0 36px 64px rgba(85, 42, 52, 0.11);
+}

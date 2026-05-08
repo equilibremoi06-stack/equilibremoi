@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import './styles/brand-theme.css';
 
 :root {
@@ -66,6 +67,21 @@ body {
     radial-gradient(circle at top, rgba(242, 167, 176, 0.2) 0%, rgba(250, 247, 242, 0.95) 45%, rgba(250, 247, 242, 1) 100%);
   font-family: 'Jost', sans-serif;
   color: #7A8C82;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 h1,

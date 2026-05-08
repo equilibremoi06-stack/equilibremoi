@@ -1,0 +1,236 @@
+.page {
+  flex: 1;
+  width: 100%;
+  min-height: 100%;
+  padding: clamp(2.25rem, 5.5vw, 3.75rem) clamp(1.15rem, 4vw, 2rem)
+    clamp(3.25rem, 8vw, 4.5rem);
+  box-sizing: border-box;
+  background: var(--eq-page-bg);
+  color: var(--eq-text);
+  font-family: var(--sans-ui, system-ui, sans-serif);
+}
+
+.hero {
+  max-width: 40rem;
+  margin: 0 auto clamp(3rem, 6vw, 4rem);
+  text-align: center;
+}
+
+.heroEyebrow,
+.sectionSubtitle,
+.heroHuman,
+.footerEmotion {
+  color: var(--eq-text-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 0.8rem auto 1rem;
+  max-width: 12ch;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.25rem, 7vw, 4rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  color: #111c16;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.heroSub,
+.promiseIntro,
+.sectionLead,
+.safety,
+.closingText {
+  max-width: 34rem;
+  margin: 0 auto;
+  color: var(--eq-text-muted);
+  font-size: clamp(0.98rem, 2.2vw, 1.08rem);
+  line-height: 1.75;
+}
+
+.heroDivider {
+  width: min(5.5rem, 34vw);
+  height: 2px;
+  margin: 1.55rem auto;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(200, 164, 74, 0.65),
+    var(--eq-rose-blush),
+    rgba(200, 164, 74, 0.65),
+    transparent
+  );
+  box-shadow: 0 0 20px rgba(232, 154, 170, 0.45);
+}
+
+.heroLandingLink {
+  margin: 1.5rem 0 0;
+}
+
+.heroLandingLink a,
+.cardCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.95rem 1.75rem;
+  color: #fff;
+  text-decoration: none;
+  background: var(--eq-btn-gradient);
+  box-shadow: var(--eq-btn-shadow);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+}
+
+.heroLandingLink a:hover,
+.cardCta:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--eq-btn-shadow-hover);
+}
+
+.promise,
+.parcours,
+.closing {
+  margin: 0 auto clamp(3rem, 6.5vw, 4.4rem);
+  text-align: center;
+}
+
+.promiseHeading,
+.sectionTitle,
+.howTitle {
+  margin: 0 0 0.65rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  color: #17241c;
+  font-size: clamp(1.55rem, 3.8vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.promiseGrid,
+.parcoursGrid {
+  display: grid;
+  gap: clamp(1.15rem, 3vw, 1.85rem);
+  width: min(100%, 62rem);
+  margin: 2rem auto 0;
+  padding: 0;
+  list-style: none;
+}
+
+.promiseGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.parcoursGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.promiseCard,
+.parcoursCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: clamp(1.5rem, 3.8vw, 2.15rem);
+  border: var(--eq-card-border);
+  border-radius: var(--eq-card-radius);
+  background: linear-gradient(168deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 246, 0.94));
+  box-shadow: var(--eq-card-shadow);
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+}
+
+.promiseCard {
+  align-items: center;
+  text-align: center;
+}
+
+.promiseCard:hover,
+.parcoursCard:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--eq-card-shadow-hover);
+}
+
+.parcoursCardHighlight {
+  border-color: rgba(232, 154, 170, 0.5);
+  background: linear-gradient(158deg, rgba(255, 255, 255, 0.99), rgba(253, 238, 242, 0.65));
+}
+
+.promiseAccent {
+  margin-bottom: 0.55rem;
+  color: var(--eq-or);
+}
+
+.promiseTitle,
+.parcoursName {
+  display: block;
+  margin: 0 0 0.55rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  color: #17241c;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.promiseText,
+.parcoursDesc,
+.parcoursBullets {
+  color: var(--eq-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.parcoursBadge {
+  width: fit-content;
+  margin-bottom: 0.9rem;
+  padding: 0.38rem 0.8rem;
+  border: 1px solid var(--eq-or-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--eq-text-soft);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.parcoursBullets {
+  margin: 0 0 1.3rem;
+  padding-left: 1.1rem;
+}
+
+.cardCta {
+  width: fit-content;
+  margin-top: auto;
+  padding: 0.78rem 1.2rem;
+  font-size: 0.7rem;
+}
+
+.safety,
+.footerEmotion {
+  text-align: center;
+}
+
+.closing {
+  width: min(100%, 42rem);
+  padding: clamp(1.5rem, 4vw, 2rem);
+  border: 1px solid rgba(200, 164, 74, 0.22);
+  border-radius: var(--eq-card-radius);
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 12px 32px rgba(36, 49, 38, 0.05);
+}
+
+@media (max-width: 768px) {
+  .promiseGrid,
+  .parcoursGrid {
+    grid-template-columns: 1fr;
+  }
+}
