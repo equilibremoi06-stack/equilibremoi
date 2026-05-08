@@ -7,7 +7,7 @@ import { ensureSessionUserId } from './lib/appSession';
 import AppHomePage from './pages/AppHomePage';
 import AuthPage from './pages/AuthPage';
 import AuthResetPasswordPage from './pages/AuthResetPasswordPage';
-import AuthUpdatePasswordPage from './pages/AuthUpdatePasswordPage';
+
 import AuthVerifyPage from './pages/AuthVerifyPage';
 import HomePage from './pages/HomePage';
 import LandingPage from './pages/LandingPage';
@@ -30,9 +30,9 @@ function App() {
                 <Route path="/" element={<Navigate to="/landing" replace />} />
                 <Route path="/landing" element={<HomePage />} />
                 <Route path="/auth" element={<AuthPage />} />
-                <Route path="/auth/verify" element={<AuthVerifyPage />} />
                 <Route path="/auth/reset-password" element={<AuthResetPasswordPage />} />
-                <Route path="/auth/update-password" element={<AuthUpdatePasswordPage />} />
+                <Route path="/auth/verify" element={<AuthVerifyPage />} />
+
                 <Route path="/offres" element={<LandingPage />} />
                 <Route path="/home" element={<Navigate to="/app" replace />} />
                 <Route

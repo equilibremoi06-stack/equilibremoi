@@ -677,7 +677,10 @@ export default function QuestionnaireClassiquePage({
               if (!user?.email) return;
               const key = `program_ready_email_sent_${user.id}_${programSignature}`;
               if (window.localStorage.getItem(key) === 'true') return;
-              return sendProgramReadyEmail()
+              return sendProgramReadyEmail(user.email, {
+                programName: 'Programme classique',
+                accessUrl: `${window.location.origin}/app`,
+              })
                 .then(() => {
                   window.localStorage.setItem(key, 'true');
                 })
