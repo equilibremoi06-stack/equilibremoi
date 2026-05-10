@@ -259,8 +259,188 @@
   border-radius: 4px;
 }
 
+.dashboardInner {
+  max-width: 68rem;
+}
+
+.dashboardTabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  margin: 0 0 1.5rem;
+}
+
+.dashboardTab {
+  border: 1px solid rgba(242, 167, 176, 0.32);
+  border-radius: 999px;
+  padding: 0.72rem 1rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--em-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.dashboardTab:hover {
+  transform: translateY(-2px);
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(36, 49, 38, 0.08);
+}
+
+.dashboardTabActive {
+  color: #fff;
+  background: linear-gradient(135deg, var(--em-rose), var(--em-rose-blush), var(--em-gold));
+  box-shadow: var(--eq-btn-shadow);
+}
+
+.dashboardPanel {
+  padding: clamp(1.3rem, 3vw, 1.9rem);
+  border: 1px solid rgba(200, 164, 74, 0.22);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(200, 164, 74, 0.14), transparent 32%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 245, 249, 0.84));
+  box-shadow: var(--em-shadow-soft);
+}
+
+.panelTitle {
+  margin: 0 0 1rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(1.5rem, 3.8vw, 2rem);
+  color: var(--em-text);
+  letter-spacing: -0.035em;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 @media (max-width: 560px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboardTabPremiumGlow {
+  box-shadow:
+    0 0 0 2px rgba(200, 164, 74, 0.42),
+    0 8px 22px rgba(36, 49, 38, 0.08);
+}
+
+.dashboardPanelPremium {
+  border-color: rgba(200, 164, 74, 0.32);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(200, 164, 74, 0.16), transparent 38%),
+    radial-gradient(circle at 88% 8%, rgba(242, 167, 176, 0.12), transparent 30%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.97), rgba(255, 248, 244, 0.9));
+  backdrop-filter: blur(8px);
+}
+
+.menopausePremiumActions {
+  margin-top: 1.25rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(200, 164, 74, 0.2);
+}
+
+.menopausePremiumHint {
+  margin: 0 0 0.9rem;
+  font-size: 0.86rem;
+  line-height: 1.58;
+  color: rgba(36, 49, 38, 0.74);
+}
+
+.menopausePremiumBtnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.menopausePdfMagazineBtn {
+  padding: 0.78rem 1.15rem;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(125deg, rgba(200, 164, 74, 0.98), var(--em-rose-blush), var(--em-rose));
+  box-shadow: 0 8px 22px rgba(200, 164, 74, 0.25);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.menopausePdfMagazineBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(200, 164, 74, 0.28);
+}
+
+.menopauseSecondaryBtn {
+  padding: 0.72rem 1.05rem;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+  color: var(--em-text);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(200, 164, 74, 0.28);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.menopauseSecondaryBtn:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.menopauseSoftUpsell {
+  margin-top: 1.15rem;
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: rgba(255, 252, 248, 0.92);
+  border: 1px dashed rgba(200, 164, 74, 0.35);
+}
+
+.menopauseSoftUpsellText {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  line-height: 1.62;
+  color: rgba(36, 49, 38, 0.78);
+}
+
+.menopausePhaseNote {
+  margin: 1.35rem 0 0;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: rgba(36, 49, 38, 0.66);
+  background: rgba(255, 252, 249, 0.92);
+  border: 1px solid rgba(200, 164, 74, 0.14);
+}
+
+@media (max-width: 560px) {
+  .menopausePremiumBtnRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menopausePdfMagazineBtn,
+  .menopauseSecondaryBtn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
   }
 }

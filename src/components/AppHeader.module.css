@@ -1,80 +1,164 @@
 .header {
+  position: relative;
+  z-index: 50;
   width: 100%;
   box-sizing: border-box;
-  padding: 12px 16px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border-bottom: none;
+  padding: clamp(1rem, 2.8vw, 1.45rem) clamp(1rem, 4vw, 1.5rem) 0;
+  background:
+    radial-gradient(ellipse 42% 140% at 50% 0%, rgba(255, 255, 255, 0.78), transparent 70%),
+    transparent;
+  border-bottom: 0;
   box-shadow: none;
 }
 
 .inner {
+  position: relative;
   max-width: 1126px;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(3rem, 1fr) auto minmax(3rem, 1fr);
   align-items: center;
   width: 100%;
-  min-height: 72px;
+  min-height: 76px;
 }
 
 .brandBlock {
+  position: relative;
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   min-width: 0;
+  text-align: center;
+}
+
+.brandBlock::after {
+  content: '';
+  width: min(6.25rem, 64%);
+  height: 1px;
+  margin-top: 0.52rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(185, 130, 32, 0.72), transparent);
+  box-shadow: 0 0 14px rgba(196, 138, 24, 0.18);
 }
 
 .userBlock {
+  grid-column: 3;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 56px;
+  min-width: 3rem;
+  position: relative;
+  z-index: 10020;
 }
 
 .logoText {
   margin: 0;
-  text-align: left;
-  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
-  font-size: 38px;
-  font-weight: 500;
-  letter-spacing: 0.4px;
-  line-height: 1.1;
-  background: linear-gradient(90deg, #d88fa0, #c48a3a);
+  text-align: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.15rem, 5vw, 3.65rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.94;
+  color: #070806;
+  background: linear-gradient(
+    106deg,
+    #050605 0%,
+    #0e0b06 30%,
+    #6f4708 48%,
+    #c28a1e 57%,
+    #503006 68%,
+    #070806 100%
+  );
+  background-size: 220% auto;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.82))
+    drop-shadow(0 10px 24px rgba(64, 42, 12, 0.08));
+  animation: headerLogoSheen 3.8s ease-in-out infinite;
 }
 
 .logoSub {
-  font-size: 12px;
-  letter-spacing: 1.8px;
-  color: #a08c7a;
-  margin-top: 2px;
+  margin-top: 0.34rem;
+  font-size: clamp(0.62rem, 1.35vw, 0.72rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(66, 50, 34, 0.62);
   text-transform: uppercase;
+}
+
+.premiumHeaderPill {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.58rem;
+  border-radius: 999px;
+  font-family: var(--sans-ui, system-ui, sans-serif);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7f4f5c;
+  background: linear-gradient(135deg, rgba(255, 248, 232, 0.95), rgba(255, 234, 242, 0.88));
+  border: 1px solid rgba(200, 164, 74, 0.45);
+  box-shadow:
+    0 0 20px rgba(200, 164, 74, 0.28),
+    0 4px 12px rgba(232, 154, 170, 0.15);
+  animation: premiumPillGlow 4.5s ease-in-out infinite;
+}
+
+@keyframes premiumPillGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 16px rgba(200, 164, 74, 0.22),
+      0 4px 10px rgba(232, 154, 170, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 26px rgba(200, 164, 74, 0.38),
+      0 6px 16px rgba(232, 154, 170, 0.2);
+  }
+}
+
+@keyframes headerLogoSheen {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
 }
 
 @media (max-width: 768px) {
   .header {
-    padding: 8px 12px 0;
+    padding: 0.85rem 0.85rem 0;
   }
 
   .inner {
-    min-height: 58px;
+    min-height: 64px;
+    grid-template-columns: minmax(2.25rem, 1fr) auto minmax(2.25rem, 1fr);
   }
 
   .logoText {
-    font-size: 30px;
-    letter-spacing: 0.15px;
+    font-size: clamp(2rem, 10vw, 3rem);
+    letter-spacing: -0.045em;
   }
 
   .logoSub {
-    font-size: 10px;
-    letter-spacing: 1.2px;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
   }
+
+  .userBlock {
+    position: fixed;
+    top: 0.9rem;
+    right: 0.9rem;
+  }
+
 }

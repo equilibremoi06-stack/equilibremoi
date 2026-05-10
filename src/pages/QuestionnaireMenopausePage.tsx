@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MedicalDisclaimer } from '../components/medical/MedicalDisclaimer';
-import { saveMenopauseFlags } from '../lib/healthProfileStorage';
+import MedicalAcknowledgmentPage from './MedicalAcknowledgmentPage';
+import { loadLocalHealthProfile, saveMenopauseFlags } from '../lib/healthProfileStorage';
+import { getCurrentUser } from '../lib/authFlow';
 import {
   menopauseDisclaimers,
   menopauseFoodsOrHabitsToModerate,
@@ -9,6 +11,8 @@ import {
   menopauseNutritionGeneral,
   MENOPAUSE_MEDICAL_REDIRECT,
 } from '../lib/menopauseContent';
+import { markQuestionnaireCompleted } from '../lib/onboardingStatus';
+import { setStoredParcours } from '../lib/userParcours';
 import styles from './QuestionnaireMenopausePage.module.css';
 
 const MINI_CARDS = [
@@ -45,10 +49,24 @@ const MINI_CARDS = [
 export default function QuestionnaireMenopausePage() {
   const navigate = useNavigate();
   const [showDetail, setShowDetail] = useState(false);
+  const [medicalAcknowledged, setMedicalAcknowledged] = useState(() => loadLocalHealthProfile().medicalAcknowledged);
 
   useEffect(() => {
+    setStoredParcours('menopause');
     saveMenopauseFlags(['parcours_menopause']);
   }, []);
+
+  const completeMenopauseQuestionnaire = async () => {
+    setStoredParcours('menopause');
+    saveMenopauseFlags(['parcours_menopause']);
+    const user = await getCurrentUser();
+    await markQuestionnaireCompleted(user, 'menopause', null);
+    navigate('/app', { replace: true });
+  };
+
+  if (!medicalAcknowledged) {
+    return <MedicalAcknowledgmentPage onComplete={() => setMedicalAcknowledged(true)} />;
+  }
 
   return (
     <div className={styles.wrap}>
@@ -90,9 +108,11 @@ export default function QuestionnaireMenopausePage() {
           <button
             type="button"
             className={styles.cta}
-            onClick={() => navigate('/questionnaire-classique')}
+            onClick={() => {
+              void completeMenopauseQuestionnaire();
+            }}
           >
-            Continuer vers mon parcours
+            Continuer vers mon dashboard ménopause
           </button>
           <button
             type="button"

@@ -1,7 +1,9 @@
 import { recipeLibrary } from './recipeLibrary';
 import { isUserAdminFromMetadata } from '../lib/authFlow';
 
+
 export type RecipeMealTime = 'matin' | 'midi' | 'soir' | 'collation';
+
 
 export type RecipeCatalogItem = {
   id: string;
@@ -23,7 +25,9 @@ export type RecipeCatalogItem = {
   updatedAt: string;
 };
 
+
 const RECIPES_CUSTOM_KEY = 'equilibremoi_recipes_custom_v1';
+
 
 const baseRecipes: RecipeCatalogItem[] = recipeLibrary.slice(0, 8).map((r, idx) => ({
   id: `base-${r.id}`,
@@ -53,9 +57,20 @@ const baseRecipes: RecipeCatalogItem[] = recipeLibrary.slice(0, 8).map((r, idx) 
   updatedAt: new Date(2026, 0, idx + 1).toISOString(),
 }));
 
-export function canAccessRecipesAdmin(user: { app_metadata?: Record<string, unknown> | null } | null | undefined): boolean {
+
+export function canAccessRecipesAdmin(
+  user:
+    | {
+        email?: string | null;
+        app_metadata?: Record<string, unknown> | null;
+        user_metadata?: Record<string, unknown> | null;
+      }
+    | null
+    | undefined
+): boolean {
   return isUserAdminFromMetadata(user);
 }
+
 
 export function listRecipesForApp(): RecipeCatalogItem[] {
   const custom = listCustomRecipes();
@@ -68,16 +83,21 @@ export function listRecipesForApp(): RecipeCatalogItem[] {
     });
 }
 
-export function getRecipeOfDay(recipes: RecipeCatalogItem[]): RecipeCatalogItem | undefined {
+
+export function getRecipeOfDay(
+  recipes: RecipeCatalogItem[]
+): RecipeCatalogItem | undefined {
   const flagged = recipes.find((r) => r.isRecipeOfDay);
   if (flagged) return flagged;
   if (recipes.length === 0) return undefined;
   const now = new Date();
   const daySeed = Math.floor(
-    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / (1000 * 60 * 60 * 24),
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) /
+      (1000 * 60 * 60 * 24),
   );
   return recipes[daySeed % recipes.length];
 }
+
 
 export function upsertCustomRecipe(item: RecipeCatalogItem): void {
   const all = listCustomRecipes();
@@ -85,10 +105,12 @@ export function upsertCustomRecipe(item: RecipeCatalogItem): void {
   saveCustomRecipes(next);
 }
 
+
 export function deleteCustomRecipe(id: string): void {
   const all = listCustomRecipes().filter((r) => r.id !== id);
   saveCustomRecipes(all);
 }
+
 
 export function createEmptyAdminRecipe(): RecipeCatalogItem {
   const now = new Date().toISOString();
@@ -113,6 +135,7 @@ export function createEmptyAdminRecipe(): RecipeCatalogItem {
   };
 }
 
+
 function listCustomRecipes(): RecipeCatalogItem[] {
   try {
     const raw = localStorage.getItem(RECIPES_CUSTOM_KEY);
@@ -125,6 +148,7 @@ function listCustomRecipes(): RecipeCatalogItem[] {
   }
 }
 
+
 function saveCustomRecipes(items: RecipeCatalogItem[]): void {
   try {
     localStorage.setItem(RECIPES_CUSTOM_KEY, JSON.stringify(items));
@@ -132,4 +156,3 @@ function saveCustomRecipes(items: RecipeCatalogItem[]): void {
     /* ignore */
   }
 }
-

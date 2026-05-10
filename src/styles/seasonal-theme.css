@@ -32,6 +32,30 @@
   flex-direction: column;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .seasonal-app-shell[data-eq-premium='true']::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 90% 45% at 50% -5%, rgba(200, 164, 74, 0.11), transparent 52%),
+      radial-gradient(circle at 100% 100%, rgba(242, 167, 176, 0.08), transparent 38%);
+    animation: premiumShellDrift 16s ease-in-out infinite;
+  }
+
+  @keyframes premiumShellDrift {
+    0%,
+    100% {
+      opacity: 0.85;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
 .seasonal-app-shell-content {
   position: relative;
   z-index: 1;

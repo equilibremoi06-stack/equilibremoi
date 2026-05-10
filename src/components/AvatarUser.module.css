@@ -1,0 +1,161 @@
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.avatarButton {
+  display: grid;
+  place-items: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  color: #17241c;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.9), transparent 34%),
+    linear-gradient(135deg, #f2a7b0, #faf7f2 48%, #c8a44a);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.55) inset,
+    0 10px 24px rgba(26, 46, 34, 0.13),
+    0 0 22px rgba(232, 154, 170, 0.2);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.avatarButton:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.65) inset,
+    0 14px 30px rgba(26, 46, 34, 0.16),
+    0 0 28px rgba(232, 154, 170, 0.26);
+}
+
+.avatarButtonPremium {
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.55) inset,
+    0 10px 24px rgba(26, 46, 34, 0.13),
+    0 0 0 2px rgba(200, 164, 74, 0.45),
+    0 0 28px rgba(200, 164, 74, 0.35);
+}
+
+.avatarButtonPremium:hover {
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.65) inset,
+    0 14px 30px rgba(26, 46, 34, 0.16),
+    0 0 0 2px rgba(200, 164, 74, 0.55),
+    0 0 36px rgba(200, 164, 74, 0.42);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  z-index: 10000;
+  min-width: 15rem;
+  padding: 0.55rem;
+  border: 1px solid rgba(242, 167, 176, 0.32);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(200, 164, 74, 0.12), transparent 30%),
+    rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 20px 48px rgba(26, 46, 34, 0.16),
+    0 0 34px rgba(232, 154, 170, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
+}
+
+.identityAvatar {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  color: #17241c;
+  background: linear-gradient(135deg, #f2a7b0, #faf7f2, #c8a44a);
+  font-weight: 900;
+}
+
+.identityTextBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.identityText {
+  max-width: 10.5rem;
+  overflow: hidden;
+  color: rgba(36, 49, 38, 0.68);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.premiumBadge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #7f4f5c;
+  background: linear-gradient(145deg, rgba(242, 167, 176, 0.35), rgba(253, 247, 232, 0.9));
+  border: 1px solid rgba(242, 167, 176, 0.45);
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  width: fit-content;
+}
+
+.separator {
+  height: 1px;
+  margin: 0.25rem 0.35rem;
+  background: linear-gradient(90deg, transparent, rgba(242, 167, 176, 0.5), transparent);
+}
+
+.menuItem {
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  padding: 0.78rem 0.9rem;
+  color: #17241c;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-align: left;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.menuItem:hover {
+  transform: translateX(2px);
+  background: linear-gradient(135deg, rgba(255, 246, 238, 0.9), rgba(255, 234, 239, 0.75));
+}
+
+.signOut {
+  color: #c8556c;
+}
+
+.adminItem {
+  color: #805c25;
+  background: linear-gradient(135deg, rgba(255, 248, 232, 0.72), rgba(255, 234, 239, 0.48));
+}
+
+.adminItem:hover {
+  color: #6f4708;
+  background: linear-gradient(135deg, rgba(255, 248, 232, 0.95), rgba(255, 234, 239, 0.75));
+}
+
+.signOut:hover {
+  color: #a83f55;
+  background: rgba(254, 242, 242, 0.9);
+}

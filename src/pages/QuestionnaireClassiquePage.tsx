@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DailyQuotePopup } from '../components/DailyQuotePopup';
+import { PremiumHubPanel } from '../components/premium/PremiumHubPanel';
+import MedicalAcknowledgmentPage from './MedicalAcknowledgmentPage';
 import type { DietType, Meal as EngineMeal } from '../data/mealDatabase';
 import {
   getIngredientDisplayParts,
@@ -18,16 +20,37 @@ import {
   type RecipeCatalogItem,
   type RecipeMealTime,
 } from '../data/recipesHub';
-import { getCurrentUser, resolveUserAccess } from '../lib/authFlow';
+import { useUserAccess } from '../context/UserAccessContext';
+import { getCurrentUser, hasPremiumEntitlements } from '../lib/authFlow';
 import { sendProgramReadyEmail } from '../lib/emailEvents';
-import { getSupabase } from '../lib/supabaseClient';
+import { loadLocalHealthProfile } from '../lib/healthProfileStorage';
+import { getUserOnboardingStatus, markQuestionnaireCompleted } from '../lib/onboardingStatus';
 import { buildProgressSummary, type WeightEntry } from '../data/progressTracking';
+import {
+  canAccessPremiumInsights,
+  canExportCoursesPdf,
+  getProgramWeeksVisibleCap,
+  getVisibleWeightHistory,
+  FREE_TIER_WEIGHT_HISTORY_VISIBLE,
+} from '../lib/productTier';
+import { getCorrelationHighlights } from '../lib/premiumLivingContent';
+import {
+  downloadCoursesMagazinePdf,
+  downloadEvolutionReportMagazinePdf,
+  downloadMenusWeekMagazinePdf,
+  downloadMonthlyBilanMagazinePdf,
+} from '../lib/premiumMagazinePdf';
+import type { PersistedMealValidation } from '../lib/mealValidationStorage';
+import { loadMealValidations, saveMealValidation } from '../lib/mealValidationStorage';
 import {
   buildPersonalizationSummary,
   buildSeasonNote,
   generateProgram,
   getCurrentSeason,
+  FREE_MEAL_ALTERNATIVE_LIMIT,
   getDailyReplacementLimit,
+  getMealAlternatives,
+  PREMIUM_MEAL_ALTERNATIVE_LIMIT,
   replaceMeal,
   type GeneratedWeek,
   type UserFoodProfile,
@@ -43,7 +66,7 @@ type RhythmOption = 'Calme' | 'Actif' | 'Très actif';
 type Phase = 'questions' | 'goalValidation' | 'analyzing' | 'result';
 
 type MealSlot = 'breakfast' | 'lunch' | 'dinner';
-type AppTab = 'accueil' | 'programme' | 'recettes' | 'courses' | 'suivi' | 'besoin' | 'profil';
+type AppTab = 'accueil' | 'programme' | 'recettes' | 'courses' | 'suivi' | 'besoin' | 'premium' | 'profil';
 type EmotionKey = 'sereine' | 'fatiguee' | 'motivee' | 'stressee';
 
 const STEP_LABELS = ['Ton objectif', 'Ton alimentation', 'Tes préférences', 'Ton budget', 'Ton quotidien'] as const;
@@ -58,6 +81,62 @@ const ANALYSIS_STEPS = [
   'On construit quelque chose de réaliste pour toi…',
   'On crée ton équilibre personnalisé… ✨',
 ] as const;
+
+function toLocalIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getProgramMealDate(weekIndex: number, dayIndex: number): string {
+  const today = new Date();
+  const todayProgramDay = today.getDay() === 0 ? 6 : today.getDay() - 1;
+  const mealDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  mealDate.setDate(mealDate.getDate() - todayProgramDay + weekIndex * 7 + dayIndex);
+  return toLocalIsoDate(mealDate);
+}
+
+function formatProgramCreatedDate(value: string | null): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+}
+
+function buildValidationStateFromRows(
+  rows: PersistedMealValidation[],
+  programWeeks: GeneratedWeek[]
+): Record<string, boolean> {
+  const next: Record<string, boolean> = {};
+  const rowsByDateAndSlot = new Set(rows.map((row) => `${row.meal_date}-${row.meal_type}`));
+
+  programWeeks.forEach((week, weekIndex) => {
+    week.days.forEach((day, dayIndex) => {
+      const mealDate = getProgramMealDate(weekIndex, dayIndex);
+      (['breakfast', 'lunch', 'dinner'] as const).forEach((slot) => {
+        const meal = day[slot];
+        if (!meal) return;
+        const hasDateMatch = rowsByDateAndSlot.has(`${mealDate}-${slot}`);
+        const hasIndexedMatch = rows.some(
+          (row) =>
+            row.week_index === weekIndex &&
+            row.day_index === dayIndex &&
+            row.meal_type === slot
+        );
+        if (hasDateMatch || hasIndexedMatch) {
+          next[`${weekIndex}-${dayIndex}-${slot}`] = true;
+        }
+      });
+    });
+  });
+
+  return next;
+}
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
 const APP_TABS: { id: AppTab; label: string }[] = [
   { id: 'accueil', label: 'Accueil' },
@@ -66,6 +145,7 @@ const APP_TABS: { id: AppTab; label: string }[] = [
   { id: 'courses', label: 'Courses' },
   { id: 'suivi', label: 'Suivi' },
   { id: 'besoin', label: 'Besoin du moment' },
+  { id: 'premium', label: '✨ Premium' },
   { id: 'profil', label: 'Profil' },
 ];
 
@@ -353,16 +433,11 @@ export default function QuestionnaireClassiquePage({
   );
   const [coursesDays, setCoursesDays] = useState(() => snapshot?.coursesDays ?? 7);
   const [recipeModal, setRecipeModal] = useState<{ meal: EngineMeal; slot: MealSlot } | null>(null);
+  const [replacementPicker, setReplacementPicker] = useState<{ slot: MealSlot; options: EngineMeal[] } | null>(null);
   const [recipeCatalog, setRecipeCatalog] = useState<RecipeCatalogItem[]>([]);
   const [selectedCatalogRecipe, setSelectedCatalogRecipe] = useState<RecipeCatalogItem | null>(null);
   const [recipesAdminEnabled, setRecipesAdminEnabled] = useState(false);
-  const [accessState, setAccessState] = useState({ isPremium: false, isAdmin: false });
-  const [accessStateResolved, setAccessStateResolved] = useState(false);
-  const [rolesLoading, setRolesLoading] = useState(true);
-  const [currentAuthUser, setCurrentAuthUser] = useState<{
-    email: string | null;
-    app_metadata: Record<string, unknown> | null;
-  } | null>(null);
+  const [programCreatedAt, setProgramCreatedAt] = useState<string | null>(null);
   const [adminRecipeDraft, setAdminRecipeDraft] = useState<RecipeCatalogItem>(() => createEmptyAdminRecipe());
   const [adminEditingId, setAdminEditingId] = useState<string | null>(null);
   const [recipeImageErrors, setRecipeImageErrors] = useState<Record<string, boolean>>({});
@@ -370,6 +445,9 @@ export default function QuestionnaireClassiquePage({
   const [activeRecipeFilter, setActiveRecipeFilter] = useState<
     'Tout' | 'Petit-déj' | 'Déjeuner' | 'Dîner' | 'Rapide' | 'Léger' | 'Protéiné'
   >('Tout');
+  const [medicalAcknowledged, setMedicalAcknowledged] = useState(() =>
+    flow === 'app' ? true : loadLocalHealthProfile().medicalAcknowledged,
+  );
   const [openedRecipeRows, setOpenedRecipeRows] = useState<Record<string, boolean>>({});
   const [displayedRecipesByMeal, setDisplayedRecipesByMeal] = useState<
     Record<'matin' | 'midi' | 'soir', RecipeCatalogItem[]>
@@ -380,6 +458,9 @@ export default function QuestionnaireClassiquePage({
   });
   const totalSteps = 5;
   const navigate = useNavigate();
+  const { user: sessionUser, access, profile: supabaseProfile, loading: accessLoading } = useUserAccess();
+  const hadSnapshotProgramRef = useRef(Boolean(snapshot?.programWeeks && snapshot.programWeeks.length > 0));
+  const premiumEntitlementRef = useRef(false);
 
   const hydrateProgramOnceRef = useRef(false);
 
@@ -431,6 +512,31 @@ export default function QuestionnaireClassiquePage({
   }, [initialTabFromUrl]);
 
   useEffect(() => {
+    if (flow !== 'app' || phase !== 'result' || programWeeks.length === 0) return;
+    let mounted = true;
+
+    void getCurrentUser()
+      .then((user) => {
+        if (!user?.id) return [];
+        return loadMealValidations(user.id, 'classique');
+      })
+      .then((rows) => {
+        if (!mounted) return;
+        setValidationState(buildValidationStateFromRows(rows, programWeeks));
+      })
+      .catch((error) => {
+        console.warn('[QuestionnaireClassiquePage] chargement validations repas échoué', error);
+        if (mounted) {
+          setValidationState({});
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [flow, phase, programWeeks]);
+
+  useEffect(() => {
     if (!selectedCatalogRecipe) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -440,57 +546,27 @@ export default function QuestionnaireClassiquePage({
   }, [selectedCatalogRecipe]);
 
   useEffect(() => {
-    const supabase = getSupabase();
-    let mounted = true;
-
-    const resolveAccess = async () => {
-      setAccessStateResolved(false);
-      setRolesLoading(true);
-      try {
-        const {
-          data: { session },
-        } = await (supabase?.auth.getSession() ?? Promise.resolve({ data: { session: null } }));
-        if (session) {
-          await supabase?.auth.refreshSession();
-        }
-        const user = await getCurrentUser();
-        if (!mounted) return;
-        setCurrentAuthUser({
-          email: user?.email ?? null,
-          app_metadata: (user?.app_metadata as Record<string, unknown> | null | undefined) ?? null,
-        });
-        console.log('[roles-debug] auth user snapshot', {
-          email: user?.email ?? null,
-          app_metadata: user?.app_metadata ?? null,
-        });
-        setRecipesAdminEnabled(canAccessRecipesAdmin(user));
-        const nextAccess = await resolveUserAccess(user);
-        if (!mounted) return;
-        setAccessState(nextAccess);
-        setAccessStateResolved(true);
-      } catch {
-        if (!mounted) return;
-        setRecipesAdminEnabled(false);
-        setAccessState({ isPremium: false, isAdmin: false });
-        setCurrentAuthUser(null);
-        setAccessStateResolved(false);
-      } finally {
-        if (mounted) setRolesLoading(false);
-      }
-    };
-
-    void resolveAccess();
-
-    const { data: authSub } = supabase?.auth.onAuthStateChange(() => {
-      void resolveAccess();
-    }) ?? { data: { subscription: { unsubscribe: () => undefined } } };
-
     setRecipeCatalog(listRecipesForApp());
+  }, []);
+
+  useEffect(() => {
+    setRecipesAdminEnabled(canAccessRecipesAdmin(sessionUser));
+  }, [sessionUser]);
+
+  useEffect(() => {
+    if (!sessionUser?.id) {
+      setProgramCreatedAt(null);
+      return;
+    }
+    let mounted = true;
+    void getUserOnboardingStatus(sessionUser).then((status) => {
+      if (!mounted) return;
+      setProgramCreatedAt(status.questionnaireCompletedAt ?? status.programCreatedAt ?? sessionUser.created_at ?? null);
+    });
     return () => {
       mounted = false;
-      authSub.subscription.unsubscribe();
     };
-  }, []);
+  }, [sessionUser]);
 
   const refreshRecipeCatalog = () => {
     setRecipeCatalog(listRecipesForApp());
@@ -611,30 +687,25 @@ export default function QuestionnaireClassiquePage({
     return 'Dîner';
   };
 
-  const isAdminUser = accessState.isAdmin;
-  const isPremiumUser = accessState.isPremium;
-  const hasPremiumAccess = isPremiumUser;
-  const shouldShowPremiumCta =
-    accessStateResolved === true &&
-    rolesLoading === false &&
-    isAdminUser !== true &&
-    isPremiumUser !== true;
-  const shouldShowAdminCtaDebug = accessStateResolved === true && rolesLoading === false && isAdminUser === true;
+  const isAdminUser =
+    access.isAdmin || supabaseProfile?.is_admin === true || supabaseProfile?.role === 'admin';
+  const hasPremiumAccess = hasPremiumEntitlements(access, supabaseProfile);
+  const isPremiumUser = hasPremiumAccess;
+  const shouldShowPremiumCta = !accessLoading && !hasPremiumAccess;
+  const shouldShowAdminCtaDebug = !accessLoading && isAdminUser;
 
   useEffect(() => {
     console.log('[roles-debug] role resolution state', {
-      user: currentAuthUser,
-      userEmail: currentAuthUser?.email ?? null,
-      userAppMetadata: currentAuthUser?.app_metadata ?? null,
-      accessState,
+      userEmail: sessionUser?.email ?? null,
+      userAppMetadata: sessionUser?.app_metadata ?? null,
+      supabaseProfile,
+      access,
       isAdminUser,
       isPremiumUser,
       shouldShowPremiumCta,
-      loading: rolesLoading,
-      resolved: accessStateResolved,
-      accessResolved: accessStateResolved,
+      loading: accessLoading,
     });
-  }, [currentAuthUser, accessState, isAdminUser, isPremiumUser, shouldShowPremiumCta, accessStateResolved, rolesLoading]);
+  }, [sessionUser, supabaseProfile, access, isAdminUser, isPremiumUser, shouldShowPremiumCta, accessLoading]);
   const parsedKg = Number(targetKg);
   const timeframeWeeks = toTimelineWeeks(timeline);
   const targetTooFast = goalValidationResult?.isAdjusted ?? false;
@@ -646,6 +717,16 @@ export default function QuestionnaireClassiquePage({
 
   const displayedWeeks = useMemo(() => toTimelineWeeks(timeline), [timeline]);
   const rotationWeeks = Math.max(8, displayedWeeks);
+  const programWeeksCap = getProgramWeeksVisibleCap(hasPremiumAccess);
+  const accessibleProgramWeeks = useMemo(
+    () => Math.min(displayedWeeks, Math.max(1, programWeeks.length), programWeeksCap),
+    [displayedWeeks, programWeeks.length, programWeeksCap],
+  );
+
+  useEffect(() => {
+    if (phase !== 'result') return;
+    setActiveWeek((w) => Math.min(w, Math.max(0, accessibleProgramWeeks - 1)));
+  }, [phase, accessibleProgramWeeks]);
 
   useEffect(() => {
     if (phase !== 'analyzing') return undefined;
@@ -715,6 +796,11 @@ export default function QuestionnaireClassiquePage({
           coursesDays: p.coursesDays,
         };
         persistClassiqueSnapshot(snap);
+        void getCurrentUser()
+          .then((user) => markQuestionnaireCompleted(user, 'classique', snap))
+          .catch((error) => {
+            console.warn('[QuestionnaireClassiquePage] statut onboarding non synchronisé', error);
+          });
         navigate('/app', { replace: true });
       } else {
         setPhase('result');
@@ -759,10 +845,10 @@ export default function QuestionnaireClassiquePage({
       allergies: splitKeywords(allergies),
       dislikes: splitKeywords(dislikes),
       budget: budgetToNumber(budget),
-      isPremium: isPremiumUser,
+      isPremium: hasPremiumAccess,
       prepStyle: rhythm === 'Très actif' ? 'quick' : 'flex',
     }),
-    [allergies, budget, dietRule, dislikes, isPremiumUser, rhythm],
+    [allergies, budget, dietRule, dislikes, hasPremiumAccess, rhythm],
   );
 
   const generatedProgram = useMemo<GeneratedWeek[]>(
@@ -1029,24 +1115,47 @@ export default function QuestionnaireClassiquePage({
   }, [coursesDays, coursesDaysLimit, programWeeks]);
   const progressEntries = useMemo<WeightEntry[]>(
     () => [
+      { date: '2026-01-15', weightKg: 74.0, waistCm: 89 },
+      { date: '2026-02-01', weightKg: 73.2, waistCm: 88 },
       { date: '2026-03-01', weightKg: 72.4, waistCm: 86 },
       { date: '2026-03-15', weightKg: 71.2, waistCm: 84 },
       { date: '2026-04-01', weightKg: 70.5, waistCm: 83 },
+      { date: '2026-04-15', weightKg: 69.9, waistCm: 82 },
     ],
     [],
   );
+  const progressEntriesVisible = useMemo(
+    () => getVisibleWeightHistory(progressEntries, hasPremiumAccess),
+    [progressEntries, hasPremiumAccess],
+  );
   const progressSummary = useMemo(
+    () => buildProgressSummary(progressEntriesVisible),
+    [progressEntriesVisible],
+  );
+  const progressSummaryFullPdf = useMemo(
     () => buildProgressSummary(progressEntries),
     [progressEntries],
+  );
+  const iaSpotlights = useMemo(
+    () => getCorrelationHighlights(new Date(), sessionUser?.id ?? null, 5),
+    [sessionUser?.id],
   );
 
   useEffect(() => {
     if (phase !== 'result') return;
-    if (flow === 'app' && !hydrateProgramOnceRef.current) {
-      hydrateProgramOnceRef.current = true;
-      if (programWeeks.length === 0) {
+    if (flow === 'app') {
+      const tierUp = premiumEntitlementRef.current === false && hasPremiumAccess === true;
+      premiumEntitlementRef.current = hasPremiumAccess;
+
+      if (!hydrateProgramOnceRef.current) {
+        hydrateProgramOnceRef.current = true;
+        if (programWeeks.length === 0) {
+          setProgramWeeks(generatedProgram);
+        }
+      } else if (tierUp && !hadSnapshotProgramRef.current) {
         setProgramWeeks(generatedProgram);
       }
+      setCoursesDays((prev) => Math.min(prev, coursesDaysLimit));
       return;
     }
     setProgramWeeks(generatedProgram);
@@ -1057,8 +1166,9 @@ export default function QuestionnaireClassiquePage({
     setActiveDay(new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
     setActiveTab('accueil');
     setRecipeModal(null);
+    setReplacementPicker(null);
     setCoursesDays((prev) => Math.min(prev, coursesDaysLimit));
-  }, [coursesDaysLimit, generatedProgram, phase, flow]);
+  }, [coursesDaysLimit, generatedProgram, phase, flow, hasPremiumAccess]);
 
   useEffect(() => {
     if (flow !== 'app' || phase !== 'result') return;
@@ -1086,6 +1196,11 @@ export default function QuestionnaireClassiquePage({
       programWeeks: programWeeks.length > 0 ? programWeeks : undefined,
     };
     persistClassiqueSnapshot(snap);
+    void getCurrentUser()
+      .then((user) => markQuestionnaireCompleted(user, 'classique', snap))
+      .catch((error) => {
+        console.warn('[QuestionnaireClassiquePage] sauvegarde programme Supabase échouée', error);
+      });
   }, [
     flow,
     phase,
@@ -1272,6 +1387,37 @@ export default function QuestionnaireClassiquePage({
     if (recipe.mealTime === 'soir') return '🍲';
     return '🍴';
   };
+  const getMealFoodEmoji = (meal: EngineMeal, recipe?: Recipe) => {
+    const searchText = normalize(
+      [
+        meal.name,
+        meal.description ?? '',
+        meal.type,
+        ...meal.tags,
+        ...meal.ingredients,
+        recipe?.title ?? '',
+        ...(recipe?.tags ?? []),
+        ...(recipe?.ingredients.map((ingredient) => ingredient.name) ?? []),
+      ].join(' '),
+    );
+
+    const iconRules: Array<{ keywords: string[]; emoji: string }> = [
+      { keywords: ['wrap', 'tortilla'], emoji: '🌯' },
+      { keywords: ['soupe', 'veloute', 'velouté'], emoji: '🍲' },
+      { keywords: ['pates', 'pasta', 'pâtes', 'spaghetti'], emoji: '🍝' },
+      { keywords: ['poisson', 'cabillaud', 'saumon', 'thon'], emoji: '🐟' },
+      { keywords: ['poulet', 'dinde', 'volaille'], emoji: '🍗' },
+      { keywords: ['oeuf', 'œuf', 'oeufs', 'œufs', 'omelette'], emoji: '🍳' },
+      { keywords: ['salade'], emoji: '🥗' },
+      { keywords: ['bowl', 'bol', 'quinoa', 'porridge', 'avoine', 'yaourt', 'granola'], emoji: '🥣' },
+      { keywords: ['sandwich', 'tartine', 'toast'], emoji: '🥪' },
+      { keywords: ['curry'], emoji: '🍛' },
+      { keywords: ['riz'], emoji: '🍚' },
+      { keywords: ['lentilles', 'pois chiches'], emoji: '🥘' },
+    ];
+
+    return iconRules.find((rule) => rule.keywords.some((keyword) => searchText.includes(normalize(keyword))))?.emoji ?? '🍽️';
+  };
   const visualRecipeEntries = useMemo<VisualRecipeEntry[]>(
     () =>
       (['matin', 'midi', 'soir'] as const).flatMap((meal) =>
@@ -1350,9 +1496,13 @@ export default function QuestionnaireClassiquePage({
     }));
   };
 
+  if (flow === 'questionnaire' && !medicalAcknowledged) {
+    return <MedicalAcknowledgmentPage onComplete={() => setMedicalAcknowledged(true)} />;
+  }
+
   if (phase === 'analyzing') {
     return (
-      <div className={styles.page}>
+      <div className={`${styles.page} ${hasPremiumAccess ? styles.pagePremium : ''}`}>
         <div className={styles.card}>
           <div className={styles.loaderWrap}>
             <div className={styles.loaderRing} aria-hidden />
@@ -1372,7 +1522,7 @@ export default function QuestionnaireClassiquePage({
 
   if (phase === 'goalValidation') {
     return (
-      <div className={styles.page}>
+      <div className={`${styles.page} ${hasPremiumAccess ? styles.pagePremium : ''}`}>
         <div className={styles.card}>
           <h2 className={styles.h2}>Validation de ton objectif ✨</h2>
           <p className={styles.intro}>{goalValidationResult?.message}</p>
@@ -1412,8 +1562,7 @@ export default function QuestionnaireClassiquePage({
       ['breakfast', 'lunch', 'dinner'].filter(
         (slot) => validationState[`${dayKey}-${slot}`]
       ).length ?? 0;
-    const accessibleWeeks = Math.min(displayedWeeks, Math.max(1, programWeeks.length));
-    const visibleWeeks = programWeeks.slice(0, accessibleWeeks);
+    const visibleWeeks = programWeeks.slice(0, accessibleProgramWeeks);
     const totalMeals = visibleWeeks.length * 7 * 3;
     const validatedMeals = Object.values(validationState).filter(Boolean).length;
     const globalProgress =
@@ -1424,39 +1573,50 @@ export default function QuestionnaireClassiquePage({
 
     const handleValidateMeal = (slot: MealSlot) => {
       const key = `${dayKey}-${slot}`;
-      setValidationState((prev) => ({ ...prev, [key]: !prev[key] }));
+      const alreadyValidated = Boolean(validationState[key]);
+      if (alreadyValidated) return;
+
+      const meal = currentDayPlan?.[slot];
+      setValidationState((prev) => ({ ...prev, [key]: true }));
+      void getCurrentUser()
+        .then((user) => {
+          if (!user?.id) return false;
+          return saveMealValidation({
+            userId: user.id,
+            parcoursType: 'classique',
+            mealDate: getProgramMealDate(activeWeek, activeDay),
+            weekIndex: activeWeek,
+            dayIndex: activeDay,
+            mealType: slot,
+            recipeId: meal?.id ?? null,
+          });
+        })
+        .then((saved) => {
+          if (!saved) {
+            setValidationState((prev) => {
+              const next = { ...prev };
+              delete next[key];
+              return next;
+            });
+          }
+        })
+        .catch((error) => {
+          console.warn('[QuestionnaireClassiquePage] sauvegarde validation repas échouée', error);
+        });
     };
 
-    const handleReplaceMeal = (slot: MealSlot) => {
-      if (!currentDayPlan || !currentWeek) return;
-      if (usedChanges >= changesPerDay) {
-        setReplaceInfo(
-          hasPremiumAccess
-            ? 'Tu as utilisé tes 5 changements disponibles aujourd’hui.'
-            : 'Tu as utilisé tes 2 changements disponibles aujourd’hui ✨ Passe au Premium pour plus de flexibilité.'
-        );
-        return;
-      }
-      const currentMeal = currentDayPlan[slot];
-      const recentIds = [
+    const buildReplacementContextIds = (slot: MealSlot) => {
+      if (!currentDayPlan || !currentWeek) return [];
+      return [
         currentDayPlan.breakfast?.id,
         currentDayPlan.lunch?.id,
         currentDayPlan.dinner?.id,
         currentWeek.days[Math.max(activeDay - 1, 0)]?.[slot]?.id,
       ].filter(Boolean) as string[];
-      const replacement = replaceMeal(currentMeal as EngineMeal, slot, profile, [
-        ...recentIds,
-        ...(programWeeks
-          .slice(Math.max(0, activeWeek - 2), activeWeek + 1)
-          .flatMap((week) => week.days)
-          .map((day) => day[slot]?.id)
-          .filter(Boolean) as string[]),
-      ]);
-      if (!replacement) {
-        setReplaceInfo('Je n’ai pas trouvé de meilleure alternative pour ce repas, tout reste cohérent avec ton profil.');
-        return;
-      }
+    };
 
+    const applyMealReplacement = (slot: MealSlot, replacement: EngineMeal) => {
+      if (!currentDayPlan || !currentWeek) return;
       setProgramWeeks((prev) =>
         prev.map((week, wIdx) =>
           wIdx !== activeWeek
@@ -1464,7 +1624,7 @@ export default function QuestionnaireClassiquePage({
             : {
                 ...week,
                 days: week.days.map((day, dIdx) =>
-                  dIdx !== activeDay ? day : { ...day, [slot]: replacement as EngineMeal }
+                  dIdx !== activeDay ? day : { ...day, [slot]: replacement }
                 ),
               }
         )
@@ -1472,13 +1632,60 @@ export default function QuestionnaireClassiquePage({
       setReplaceCountByDay((prev) => ({ ...prev, [dayKey]: (prev[dayKey] ?? 0) + 1 }));
       setReplaceInfo(
         hasPremiumAccess
-          ? `Repas ajusté (${usedChanges + 1}/${changesPerDay} changements aujourd’hui).`
-          : `Repas ajusté (${usedChanges + 1}/${changesPerDay} changements aujourd’hui).`
+          ? `Repas remplacé (${usedChanges + 1}/${changesPerDay} changements aujourd’hui). La liste de courses est mise à jour.`
+          : `Repas remplacé (${usedChanges + 1}/${changesPerDay} changements aujourd’hui).`
+      );
+      setReplacementPicker(null);
+      if (recipeModal?.slot === slot) {
+        setRecipeModal({ meal: replacement, slot });
+      }
+    };
+
+    const handleReplaceMeal = (slot: MealSlot) => {
+      if (!currentDayPlan || !currentWeek) return;
+      if (usedChanges >= changesPerDay) {
+        setReplaceInfo(
+          hasPremiumAccess
+            ? 'Tu as utilisé tes 6 changements disponibles aujourd’hui. Demain, on repart sur une page blanche douce 💛'
+            : 'Tu progresses bien ✨ Tu as utilisé tes 2 changements repas aujourd’hui. Le Premium t’offre jusqu’à 6 alternatives intelligentes — toujours en douceur, sans te brusquer.',
+        );
+        return;
+      }
+      const currentMeal = currentDayPlan[slot];
+      if (!currentMeal) return;
+      const recentIds = buildReplacementContextIds(slot);
+      const altLimit = hasPremiumAccess ? PREMIUM_MEAL_ALTERNATIVE_LIMIT : FREE_MEAL_ALTERNATIVE_LIMIT;
+      const alternatives = getMealAlternatives(
+        currentMeal as EngineMeal,
+        slot,
+        profile,
+        recentIds,
+        altLimit,
+      );
+      const fallbackAlternatives = alternatives.length
+        ? alternatives
+        : getMealAlternatives(currentMeal as EngineMeal, slot, profile, [currentMeal.id], altLimit);
+      if (!fallbackAlternatives.length) {
+        const replacement = replaceMeal(currentMeal as EngineMeal, slot, profile, [currentMeal.id]);
+        if (!replacement) {
+          setReplaceInfo('Je n’ai pas trouvé d’alternative cohérente pour ce repas, tout reste aligné avec ton profil.');
+          setReplacementPicker(null);
+          return;
+        }
+        applyMealReplacement(slot, replacement as EngineMeal);
+        return;
+      }
+
+      setReplacementPicker({ slot, options: fallbackAlternatives as EngineMeal[] });
+      setReplaceInfo(
+        hasPremiumAccess
+          ? `Choisis parmi ${PREMIUM_MEAL_ALTERNATIVE_LIMIT} alternatives Premium cohérentes avec ton profil.`
+          : `Choisis parmi ${FREE_MEAL_ALTERNATIVE_LIMIT} alternatives cohérentes avec ton profil.`,
       );
     };
 
     const handleUnlockPremium = () => {
-      navigate('/offres');
+      setActiveTab('premium');
     };
 
     const supportEmail = 'equilibremoi.06@gmail.com';
@@ -1495,7 +1702,7 @@ export default function QuestionnaireClassiquePage({
     };
 
     return (
-      <div className={styles.page}>
+      <div className={`${styles.page} ${hasPremiumAccess ? styles.pagePremium : ''}`}>
         <div className={`${styles.card} ${styles.resultsContainer}`}>
           <h2 className={styles.h2}>✨ Ton programme est prêt</h2>
           <p className={styles.intro}>
@@ -1505,23 +1712,111 @@ export default function QuestionnaireClassiquePage({
             Tu peux avancer simplement, sans pression… à ton rythme 💖
           </p>
 
-          {activeTab === 'accueil' ? <DailyQuotePopup /> : null}
+          {activeTab === 'accueil' ? <DailyQuotePopup hasPremiumAccess={hasPremiumAccess} /> : null}
 
-          <nav className={styles.appTabs} aria-label="Navigation application">
+          <nav className={`${styles.appTabs} ${hasPremiumAccess ? styles.appTabsPremium : ''}`} aria-label="Navigation application">
             {APP_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
-                className={`${styles.appTabButton} ${activeTab === tab.id ? styles.appTabButtonActive : ''}`}
+                className={`${styles.appTabButton} ${activeTab === tab.id ? styles.appTabButtonActive : ''} ${
+                  hasPremiumAccess && activeTab === tab.id ? styles.appTabButtonPremiumActive : ''
+                }`}
                 onClick={() => setActiveTab(tab.id)}
               >
-                {tab.label}
+                {tab.id === 'premium' && hasPremiumAccess ? 'Premium actif ✨' : tab.label}
               </button>
             ))}
           </nav>
 
           {activeTab === 'accueil' ? (
             <>
+              {currentDayPlan ? (
+                <section className={`${styles.todayProgramCard} ${styles.fadeInSoft}`} aria-labelledby="today-program-title">
+                  <div className={styles.todayProgramGlow} aria-hidden />
+                  <div className={styles.todayProgramHeader}>
+                    <div>
+                      <p className={styles.todayProgramKicker}>Ta journée du jour</p>
+                      <h3 id="today-program-title" className={styles.todayProgramTitle}>
+                        {DAYS[activeDay]} · {dayValidatedLabel(dayProgress)}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.todayProgramOpenButton}
+                      onClick={() => setActiveTab('programme')}
+                    >
+                      Voir tout le programme
+                    </button>
+                  </div>
+
+                  <div className={styles.todayProgressWrap}>
+                    <div className={styles.dayProgressBar} aria-hidden>
+                      <div
+                        className={styles.dayProgressBarFill}
+                        style={{ width: `${Math.min(100, (dayProgress / 3) * 100)}%` }}
+                      />
+                    </div>
+                    <p className={styles.todayProgressText}>
+                      {dayProgress}/3 repas validés · {dayProgress >= 3 ? 'Journée complète 💛' : 'Tu avances à ton rythme'}
+                    </p>
+                  </div>
+
+                  <div className={styles.todayMealsGrid}>
+                    {(['breakfast', 'lunch', 'dinner'] as MealSlot[]).map((slot) => {
+                      const meal = currentDayPlan[slot];
+                      if (!meal) return null;
+                      const validated = Boolean(validationState[`${dayKey}-${slot}`]);
+                      const linkedRecipe = resolveRecipeForMeal(meal.id, meal.name);
+                      const quantityPreview = linkedRecipe?.ingredients
+                        ?.slice(0, 3)
+                        .map((ingredient) => {
+                          const parts = getIngredientDisplayParts(ingredient);
+                          return parts.detail ? `${parts.name} (${parts.detail})` : parts.name;
+                        })
+                        .join(' · ');
+
+                      return (
+                        <article
+                          key={`today-${slot}`}
+                          className={`${styles.todayMealCard} ${validated ? styles.todayMealCardDone : ''}`}
+                        >
+                          <div className={styles.todayMealTop}>
+                            <span className={styles.todayMealMoment}>
+                              {getMealFoodEmoji(meal, linkedRecipe)} {SLOT_MEAL_LABEL[slot]}
+                            </span>
+                            <span className={styles.todayMealStatus}>
+                              {validated ? 'Validé' : 'À valider'}
+                            </span>
+                          </div>
+                          <h4 className={styles.todayMealTitle}>{meal.name}</h4>
+                          <p className={styles.todayMealMeta}>
+                            {quantityPreview || meal.ingredients.slice(0, 3).join(' · ')}
+                          </p>
+                          <div className={styles.todayMealActions}>
+                            <button
+                              type="button"
+                              className={styles.todayMealSecondary}
+                              onClick={() => setRecipeModal({ meal, slot })}
+                            >
+                              Voir la recette complète
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.todayMealPrimary} ${validated ? styles.todayMealPrimaryDone : ''}`}
+                              onClick={() => handleValidateMeal(slot)}
+                              disabled={validated}
+                            >
+                              {validated ? 'Repas validé ✅' : 'Valider le repas'}
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+
               <div className={`${styles.summaryCard} ${styles.cardHighlight} ${styles.homeBlock} ${styles.fadeInSoft}`}>
                 <div className={styles.sectionAccentBar} aria-hidden />
                 <h3 className={`${styles.blockTitle} ${styles.highlightTitle}`}>Un accompagnement plus humain 💖</h3>
@@ -1582,12 +1877,13 @@ export default function QuestionnaireClassiquePage({
                   <div className={styles.resultActions}>
                     {(() => {
                       console.log('[CTA-PREMIUM-RENDER]', {
-                        userEmail: currentAuthUser?.email ?? null,
+                        userEmail: sessionUser?.email ?? null,
                         isAdminUser,
                         isPremiumUser,
                         shouldShowPremiumCta,
-                        accessState,
-                        accessStateResolved,
+                        access,
+                        accessLoading,
+                        supabaseProfile,
                       });
                       return null;
                     })()}
@@ -2255,8 +2551,8 @@ export default function QuestionnaireClassiquePage({
               <p className={styles.intro}>Ta liste est déjà prête… tu gagnes un temps fou 🤍</p>
               <p className={styles.evolveNote}>
                 {hasPremiumAccess
-                  ? 'Premium : jusqu’à 15 jours, adaptation budget, téléchargement et partage.'
-                  : 'Gratuit : version simple jusqu’à 7 jours.'}
+                  ? 'Premium : jusqu’à 15 jours, optimisation des courses, budget intelligent et export PDF élégant.'
+                  : 'Gratuit : liste simple jusqu’à 7 jours — sans export PDF ni optimisation avancée.'}
               </p>
               <div
                 className={styles.optionRow}
@@ -2315,6 +2611,78 @@ export default function QuestionnaireClassiquePage({
                   {displayedShoppingByCategoryEntries.length > 1 ? 's' : ''} · Basée sur tes repas sélectionnés
                 </p>
               </div>
+              {canExportCoursesPdf(hasPremiumAccess) ? (
+                <div className={styles.premiumPdfToolbar}>
+                  <button
+                    type="button"
+                    className={styles.premiumPdfBtn}
+                    onClick={() =>
+                      downloadCoursesMagazinePdf({
+                        daysCount: coursesDays,
+                        categories: displayedShoppingByCategoryEntries,
+                        userId: sessionUser?.id ?? null,
+                      })
+                    }
+                  >
+                    PDF magazine · Courses
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.premiumPdfBtn}
+                    onClick={() => {
+                      const week = programWeeks[activeWeek];
+                      if (!week?.days?.length) return;
+                      const days = week.days.map((day, idx) => ({
+                        label: DAYS[idx] ?? `Jour ${idx + 1}`,
+                        breakfast: day.breakfast?.name ?? '—',
+                        lunch: day.lunch?.name ?? '—',
+                        dinner: day.dinner?.name ?? '—',
+                      }));
+                      downloadMenusWeekMagazinePdf({
+                        weekLabel: `Semaine ${activeWeek + 1}`,
+                        days,
+                        userId: sessionUser?.id ?? null,
+                      });
+                    }}
+                  >
+                    PDF magazine · Menus semaine
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.premiumPdfBtn}
+                    onClick={() =>
+                      downloadMonthlyBilanMagazinePdf({
+                        summary: progressSummaryFullPdf,
+                        entries: progressEntries,
+                        userId: sessionUser?.id ?? null,
+                      })
+                    }
+                  >
+                    PDF · Bilan mensuel
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.premiumPdfBtn}
+                    onClick={() =>
+                      downloadEvolutionReportMagazinePdf({
+                        summary: progressSummaryFullPdf,
+                        entries: progressEntries,
+                        userId: sessionUser?.id ?? null,
+                      })
+                    }
+                  >
+                    PDF · Rapport évolution
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.premiumPdfBtn}
+                    style={{ borderStyle: 'dashed', opacity: 0.9 }}
+                    onClick={() => window.print()}
+                  >
+                    Imprimer la page
+                  </button>
+                </div>
+              ) : null}
               <div style={{ display: 'grid', gap: '0.64rem' }}>
                 {displayedShoppingByCategoryEntries.map(([category, items]) => (
                   <article
@@ -2356,18 +2724,101 @@ export default function QuestionnaireClassiquePage({
 
           {activeTab === 'suivi' ? (
             <div className={`${styles.summaryCard} ${styles.resultsSection} ${styles.fadeInSoft}`}>
-              <h3 className={styles.blockTitle}>Onglet Suivi</h3>
+              <h3 className={styles.blockTitle}>Journal &amp; suivi</h3>
               <p className={styles.intro}>Tu avances déjà… même doucement, et ça compte 💖</p>
               <ul className={styles.summaryList}>
-                <li>Poids départ : {progressSummary.startWeight ?? '—'} kg</li>
+                <li>Poids départ (période affichée) : {progressSummary.startWeight ?? '—'} kg</li>
                 <li>Poids actuel : {progressSummary.currentWeight ?? '—'} kg</li>
-                <li>Évolution : {progressSummary.deltaKg ?? '—'} kg</li>
-                <li>
-                  {hasPremiumAccess
-                    ? 'Premium : historique complet, mensurations détaillées et graphiques.'
-                    : 'Gratuit : suivi simple du poids et progression basique.'}
-                </li>
+                <li>Évolution sur la période visible : {progressSummary.deltaKg ?? '—'} kg</li>
+                {!hasPremiumAccess && progressEntries.length > FREE_TIER_WEIGHT_HISTORY_VISIBLE ? (
+                  <li style={{ color: '#9b5262', fontWeight: 600 }}>
+                    Gratuit : historique limité aux {FREE_TIER_WEIGHT_HISTORY_VISIBLE} derniers relevés — Premium :
+                    historique complet, lecture de l’évolution sur toute la période enregistrée et exports PDF.
+                  </li>
+                ) : null}
+                {hasPremiumAccess ? (
+                  <li>
+                    Premium actif ✨ : corrélations IA visibles ci-dessous, historique complet, exports magazine (bilan,
+                    évolution, courses, menus).
+                  </li>
+                ) : (
+                  <li>
+                    Gratuit : résumé essentiel — les corrélations IA et les PDF magazine se débloquent en Premium.
+                  </li>
+                )}
               </ul>
+              <div
+                style={{
+                  marginTop: '1rem',
+                  padding: '0.85rem 1rem',
+                  borderRadius: 18,
+                  border: '1px solid rgba(232, 154, 170, 0.35)',
+                  background: canAccessPremiumInsights(hasPremiumAccess)
+                    ? 'linear-gradient(145deg, rgba(255,248,246,0.95), rgba(253,238,242,0.85))'
+                    : 'rgba(247,242,236,0.85)',
+                  filter: canAccessPremiumInsights(hasPremiumAccess) ? undefined : 'grayscale(0.25)',
+                  opacity: canAccessPremiumInsights(hasPremiumAccess) ? 1 : 0.78,
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 700, color: '#5E3D30', fontSize: '0.88rem' }}>
+                  Corrélations douces ✨ — fonction phare EquilibreMoi
+                </p>
+                <p style={{ margin: '0.45rem 0 0', fontSize: '0.84rem', lineHeight: 1.55, color: '#5E7167' }}>
+                  {canAccessPremiumInsights(hasPremiumAccess)
+                    ? 'Voici des pistes que ton espace met en avant cette semaine — comme si l’app apprenait vraiment de tes habitudes, sans jamais te juger.'
+                    : 'Tu progresses bien ✨ Le Premium débloque maintenant une analyse plus profonde et bienveillante de tes habitudes — le genre de messages qui font : « elle me comprend ».'}
+                </p>
+              </div>
+              {canAccessPremiumInsights(hasPremiumAccess) ? (
+                <>
+                  <div
+                    style={{
+                      marginTop: '1rem',
+                      padding: '0.85rem 1rem',
+                      borderRadius: 18,
+                      border: '1px solid rgba(200, 164, 74, 0.32)',
+                      background: 'linear-gradient(160deg, rgba(255,255,255,0.75), rgba(255,248,232,0.35))',
+                    }}
+                  >
+                    <p style={{ margin: '0 0 0.5rem', fontWeight: 800, color: '#7a5230', fontSize: '0.82rem' }}>
+                      Ton profil IA — observations de la semaine
+                    </p>
+                    <ul style={{ margin: 0, paddingLeft: '1.1rem', color: '#5E7167', fontSize: '0.84rem', lineHeight: 1.55 }}>
+                      {iaSpotlights.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className={styles.premiumPdfToolbar} style={{ marginTop: '0.75rem' }}>
+                    <button
+                      type="button"
+                      className={styles.premiumPdfBtn}
+                      onClick={() =>
+                        downloadMonthlyBilanMagazinePdf({
+                          summary: progressSummaryFullPdf,
+                          entries: progressEntries,
+                          userId: sessionUser?.id ?? null,
+                        })
+                      }
+                    >
+                      PDF · Bilan mensuel
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.premiumPdfBtn}
+                      onClick={() =>
+                        downloadEvolutionReportMagazinePdf({
+                          summary: progressSummaryFullPdf,
+                          entries: progressEntries,
+                          userId: sessionUser?.id ?? null,
+                        })
+                      }
+                    >
+                      PDF · Rapport évolution
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : null}
 
@@ -2382,6 +2833,21 @@ export default function QuestionnaireClassiquePage({
                 <li>Carte “J’ai peu de temps” : repas express déjà prêts</li>
                 <li>Carte “J’ai perdu ma motivation” : micro-rituels bienveillants</li>
               </ul>
+              <p className={styles.softNote} style={{ marginTop: '0.75rem' }}>
+                {hasPremiumAccess
+                  ? 'Premium : accès complet aux fiches « Comprendre » et aux idées du besoin du moment.'
+                  : 'Gratuit : quelques fiches « Comprendre » en aperçu — le catalogue complet est offert en Premium 🧠'}
+              </p>
+            </div>
+          ) : null}
+
+          {activeTab === 'premium' ? (
+            <div className={`${styles.resultsSection} ${styles.fadeInSoft}`}>
+              <PremiumHubPanel
+                hasPremiumAccess={hasPremiumAccess}
+                isAdminUser={isAdminUser}
+                userId={sessionUser?.id ?? null}
+              />
             </div>
           ) : null}
 
@@ -2395,6 +2861,7 @@ export default function QuestionnaireClassiquePage({
                 <li>Durée : {formatWeeksToTimelineLabel(goalValidationResult?.adjustedTimeframeWeeks ?? timeframeWeeks)}</li>
                 <li>Alimentation : {diet || '—'}</li>
                 <li>Rythme : {rhythm || '—'}</li>
+                <li>Programme créé le : {formatProgramCreatedDate(programCreatedAt)}</li>
                 <li>Statut : {isAdminUser ? 'Administratrice' : hasPremiumAccess ? 'Premium actif' : 'Version essentielle'}</li>
               </ul>
             </div>
@@ -2523,10 +2990,13 @@ export default function QuestionnaireClassiquePage({
           </div>
 
           <p className={styles.programmeMetaLine}>
-            {hasPremiumAccess ? '5 changements de repas / jour en Premium.' : '2 changements de repas / jour en gratuit.'}{' '}
+            {hasPremiumAccess ? 'Jusqu’à 6 remplacements de repas par jour.' : 'Jusqu’à 2 remplacements de repas par jour.'}{' '}
             {hasPremiumAccess
-              ? `Accès : ${displayedWeeks} semaine${displayedWeeks > 1 ? 's' : ''}.`
-              : 'Tous tes jours de programme sont visibles — le Premium ajoute plus de flexibilité et d’options ✨'}
+              ? `Navigation : ${accessibleProgramWeeks} semaine${accessibleProgramWeeks > 1 ? 's' : ''} visibles (jusqu’à ${programWeeksCap} selon ton objectif).`
+              : displayedWeeks > accessibleProgramWeeks
+                ? `Navigation : ${accessibleProgramWeeks} semaine${accessibleProgramWeeks > 1 ? 's' : ''} visibles — Premium élargit jusqu’à ${programWeeksCap} semaines pour explorer plus loin ✨`
+                : `Navigation : ${accessibleProgramWeeks} semaine${accessibleProgramWeeks > 1 ? 's' : ''} visibles.`}{' '}
+            Objectif en questionnaire : {displayedWeeks} sem.
           </p>
 
           <div className={styles.weekNav}>
@@ -2539,13 +3009,13 @@ export default function QuestionnaireClassiquePage({
               Semaine précédente
             </button>
             <span className={styles.weekLabel}>
-              Semaine {Math.min(activeWeek + 1, accessibleWeeks)} / {accessibleWeeks}
+              Semaine {Math.min(activeWeek + 1, accessibleProgramWeeks)} / {accessibleProgramWeeks}
             </span>
             <button
               type="button"
               className={styles.buttonGhost}
-              onClick={() => setActiveWeek((w) => Math.min(accessibleWeeks - 1, w + 1))}
-              disabled={activeWeek >= accessibleWeeks - 1}
+              onClick={() => setActiveWeek((w) => Math.min(accessibleProgramWeeks - 1, w + 1))}
+              disabled={activeWeek >= accessibleProgramWeeks - 1}
             >
               Semaine suivante
             </button>
@@ -2566,9 +3036,15 @@ export default function QuestionnaireClassiquePage({
 
           {replaceInfo ? <p className={styles.replaceInfo}>{replaceInfo}</p> : null}
           {!hasPremiumAccess && usedChanges >= changesPerDay ? (
-            <p className={styles.premiumHint}>
-              Besoin de plus de flexibilité ? Le Premium permet jusqu’à 5 changements de repas par jour ❤️
-            </p>
+            <div className={styles.premiumSoftUpsell}>
+              <p>
+                Tu progresses bien ✨ Tu as utilisé tes 2 changements repas pour aujourd’hui. Le Premium débloque
+                maintenant jusqu’à 6 alternatives intelligentes — toujours avec douceur, jamais avec pression.
+              </p>
+              <button type="button" className={`${styles.buttonPrimary} ${styles.premiumButton}`} onClick={handleUnlockPremium}>
+                Découvrir le Premium
+              </button>
+            </div>
           ) : null}
 
           <section id="menus-personnalises" className={styles.menuGrid}>
@@ -2611,7 +3087,12 @@ export default function QuestionnaireClassiquePage({
                             →
                           </span>
                         </span>
-                        <span className={styles.mealTitle}>{meal.name}</span>
+                        <span className={styles.mealTitle}>
+                          <span className={styles.mealTitleIcon} aria-hidden>
+                            {getMealFoodEmoji(meal, resolveRecipeForMeal(meal.id, meal.name))}
+                          </span>
+                          <span>{meal.name}</span>
+                        </span>
                         {seasonLine ? <span className={styles.mealSeasonLine}>{seasonLine}</span> : null}
                         <span className={styles.mealEnergyLine}>{energyLine}</span>
                         <span className={styles.mealIngredients}>{ingredientPreview}</span>
@@ -2629,6 +3110,7 @@ export default function QuestionnaireClassiquePage({
                           type="button"
                           className={`${styles.mealBtnPrimary} ${validated ? styles.mealBtnPrimaryDone : ''}`}
                           onClick={() => handleValidateMeal(slot)}
+                          disabled={validated}
                         >
                           {validated ? 'Repas validé ✅' : 'Valider ce repas 💛'}
                         </button>
@@ -2639,6 +3121,8 @@ export default function QuestionnaireClassiquePage({
               </article>
             ) : null}
           </section>
+            </>
+          ) : null}
 
           {recipeModal ? (
             <div className={styles.recipeModalOverlay} onClick={() => setRecipeModal(null)}>
@@ -2674,6 +3158,14 @@ export default function QuestionnaireClassiquePage({
                       {recipeModal.meal.name}
                     </h4>
                     <p className={styles.recipeModalSubtitle}>Recette détaillée</p>
+                    <p className={styles.recipeModalMetaLine}>
+                      ⏱ {selectedRecipe?.prepMinutes ?? (recipeModal.meal.prepTime === 'quick' ? 12 : 28)} min · 1 portion ·{' '}
+                      {recipeModal.meal.caloriesLevel === 'light'
+                        ? 'repas léger'
+                        : recipeModal.meal.caloriesLevel === 'satisfying'
+                          ? 'repas rassasiant'
+                          : 'repas équilibré'}
+                    </p>
                   </div>
                 </div>
                 {selectedRecipe?.premiumOnly && !hasPremiumAccess ? (
@@ -2750,6 +3242,25 @@ export default function QuestionnaireClassiquePage({
                         ))}
                       </ol>
                     </section>
+                    <section className={styles.recipeModalSection}>
+                      <div className={styles.recipeModalSectionHeading}>
+                        <span className={styles.recipeModalSectionMark}>3</span>
+                        <h5 className={styles.recipeModalSectionTitle}>Astuces & substitutions</h5>
+                      </div>
+                      <div className={styles.recipeModalTips}>
+                        <p>
+                          Ajuste les quantités selon ta faim du jour : l’objectif est de rester confortable,
+                          pas de te forcer.
+                        </p>
+                        <p>
+                          Substitution douce : remplace une protéine par une autre équivalente que tu tolères bien,
+                          et garde la même base de légumes ou féculents.
+                        </p>
+                        <p>
+                          Si un aliment ne te convient pas, utilise la fonction “Changer ce repas” dans ton programme.
+                        </p>
+                      </div>
+                    </section>
                   </>
                 )}
                 <div className={styles.recipeModalActions}>
@@ -2775,7 +3286,67 @@ export default function QuestionnaireClassiquePage({
               </div>
             </div>
           ) : null}
-            </>
+          {replacementPicker ? (
+            <div className={styles.replacementOverlay} onClick={() => setReplacementPicker(null)}>
+              <section
+                className={styles.replacementPanel}
+                aria-label="Alternatives de repas"
+                role="dialog"
+                aria-modal="true"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className={styles.replacementPanelHead}>
+                  <div>
+                    <p className={styles.replacementKicker}>
+                      {hasPremiumAccess
+                        ? `${PREMIUM_MEAL_ALTERNATIVE_LIMIT} alternatives Premium`
+                        : `${FREE_MEAL_ALTERNATIVE_LIMIT} alternatives gratuites`}
+                    </p>
+                    <h4 className={styles.replacementTitle}>
+                      Remplacer {SLOT_MEAL_LABEL[replacementPicker.slot].toLowerCase()}
+                    </h4>
+                    <p className={styles.replacementIntro}>
+                      {hasPremiumAccess
+                        ? `Jusqu’à ${PREMIUM_MEAL_ALTERNATIVE_LIMIT} alternatives Premium, alignées avec ton profil, ton budget et la saison.`
+                        : replacementPicker.options.length === 1
+                          ? '1 alternative cohérente avec ton profil est disponible.'
+                          : `${replacementPicker.options.length} alternatives cohérentes avec ton profil sont disponibles.`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.replacementClose}
+                    onClick={() => setReplacementPicker(null)}
+                  >
+                    Fermer
+                  </button>
+                </div>
+                <div className={styles.replacementGrid}>
+                  {replacementPicker.options.map((option) => {
+                    const linkedRecipe = resolveRecipeForMeal(option.id, option.name);
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={styles.replacementCard}
+                        onClick={() => applyMealReplacement(replacementPicker.slot, option)}
+                      >
+                        <span className={styles.replacementIcon} aria-hidden>
+                          {getMealFoodEmoji(option, linkedRecipe)}
+                        </span>
+                        <span className={styles.replacementName}>{option.name}</span>
+                        <span className={styles.replacementMeta}>
+                          {option.prepTime === 'quick' ? 'Rapide' : 'Confort'} · {MEAL_ENERGY_LINE[option.caloriesLevel] ?? 'Repas équilibré'}
+                        </span>
+                        <span className={styles.replacementIngredients}>
+                          {option.ingredients.slice(0, 3).join(' · ')}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
           ) : null}
         </div>
       </div>
@@ -2783,7 +3354,7 @@ export default function QuestionnaireClassiquePage({
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${hasPremiumAccess ? styles.pagePremium : ''}`}>
       <div className={styles.card}>
         <div className={styles.progressOuter} aria-hidden>
           <div className={styles.progressInner} style={{ width: `${(step / totalSteps) * 100}%` }} />

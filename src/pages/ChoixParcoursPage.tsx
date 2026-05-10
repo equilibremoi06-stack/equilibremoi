@@ -1,90 +1,110 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SensitiveProfileBanner } from '../components/medical/SensitiveProfileBanner';
-import { SeasonalProfileBadge } from '../components/seasonal/SeasonalProfileBadge';
-import { useSeasonalThemeContext } from '../hooks/useSeasonalTheme';
+import { saveOnboardingProgress } from '../lib/onboardingStatus';
+import { getSupabase } from '../lib/supabaseClient';
+import { setStoredParcours, syncSelectedParcoursSupabase, type UserParcours } from '../lib/userParcours';
 import styles from './ChoixParcoursPage.module.css';
 
 export default function ChoixParcoursPage() {
   const navigate = useNavigate();
-  const theme = useSeasonalThemeContext();
+  const [selectedParcours, setSelectedParcours] = useState<UserParcours | null>(null);
 
-  const handleClassique = () => {
-    localStorage.setItem('parcours', 'classique');
-    navigate('/questionnaire-classique');
-  };
+  const continueWithParcours = async (parcours: UserParcours) => {
+    setSelectedParcours(parcours);
+    setStoredParcours(parcours);
 
-  const handleMenopause = () => {
-    localStorage.setItem('parcours', 'menopause');
-    navigate('/questionnaire-menopause');
+    const supabase = getSupabase();
+    const { data } = supabase
+      ? await supabase.auth.getUser()
+      : { data: { user: null } };
+
+    if (data.user) {
+      await syncSelectedParcoursSupabase(data.user);
+      await saveOnboardingProgress(data.user, {
+        parcoursType: parcours,
+        onboardingCompleted: false,
+        onboardingStep: 0,
+      });
+      navigate(parcours === 'menopause' ? '/questionnaire-menopause' : '/questionnaire-classique');
+      return;
+    }
+
+    navigate('/login?next=%2Fonboarding', { state: { parcours } });
   };
 
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
         <div className={styles.heroHead}>
-          {theme.showProfileBadge ? (
-            <div className={styles.heroBadge}>
-              <SeasonalProfileBadge theme={theme} />
-            </div>
-          ) : null}
-          <p className={styles.kicker}>Ton rythme, ton corps</p>
+          <p className={styles.kicker}>Ton accompagnement commence ici</p>
           <h1 className={styles.title}>
-            L’accompagnement alimentaire
+            Choisis le parcours
             <br />
-            qui te ressemble
+            qui te ressemble vraiment
           </h1>
           <div className={styles.decorLine} aria-hidden />
         </div>
         <p className={styles.subtitle}>
-          Une approche douce, pensée pour les femmes : choisis le parcours qui
-          correspond à ton moment de vie. Bien-être uniquement — jamais un substitut
-          à un suivi médical.
+          Avant de créer ton espace, dis-nous ce dont tu as besoin. Ton questionnaire,
+          tes conseils et ton tableau de bord seront adaptés à ce choix.
         </p>
       </section>
 
-      <div className={styles.sensitiveBanner}>
-        <SensitiveProfileBanner />
-      </div>
-
       <section className={styles.cards} aria-label="Choix du parcours">
-        <div className={styles.card} onClick={handleClassique}>
-          <h2 className={styles.cardTitle}>Équilibre au quotidien</h2>
+        <article
+          className={`${styles.card} ${selectedParcours === 'classique' ? styles.cardSelected : ''}`}
+          onClick={() => continueWithParcours('classique')}
+        >
+          <span className={styles.cardIcon} aria-hidden>
+            🌿
+          </span>
+          <p className={styles.cardEyebrow}>Routine classique</p>
+          <h2 className={styles.cardTitle}>Parcours Équilibre</h2>
           <ul className={styles.list}>
-            <li>Des repas simples et sans pression</li>
-            <li>À ton rythme, selon ta vie</li>
-            <li>Retrouver du plaisir sans culpabiliser</li>
+            <li>Accompagnement quotidien</li>
+            <li>Alimentation douce</li>
+            <li>Perte de poids bienveillante</li>
+            <li>Routine classique</li>
           </ul>
           <button
             type="button"
             className={styles.cta}
             onClick={(e) => {
               e.stopPropagation();
-              handleClassique();
+              void continueWithParcours('classique');
             }}
           >
-            Je choisis ce parcours
+            Continuer avec ce parcours
           </button>
-        </div>
+        </article>
 
-        <div className={`${styles.card} ${styles.cardHighlight}`} onClick={handleMenopause}>
-          <span className={styles.badge}>Si cette étape te parle</span>
-          <h2 className={styles.cardTitle}>Parcours ménopause</h2>
+        <article
+          className={`${styles.card} ${styles.cardHighlight} ${selectedParcours === 'menopause' ? styles.cardSelected : ''}`}
+          onClick={() => continueWithParcours('menopause')}
+        >
+          <span className={styles.badge}>Accompagnement spécifique</span>
+          <span className={styles.cardIcon} aria-hidden>
+            🌸
+          </span>
+          <p className={styles.cardEyebrow}>Équilibre hormonal</p>
+          <h2 className={styles.cardTitle}>Parcours Ménopause</h2>
           <ul className={styles.list}>
-            <li>Un accompagnement adapté à cette période</li>
-            <li>Retrouver ton énergie en douceur</li>
-            <li>Des conseils rassurants et personnalisés</li>
+            <li>Symptômes</li>
+            <li>Fatigue</li>
+            <li>Hormones</li>
+            <li>Accompagnement spécifique</li>
           </ul>
           <button
             type="button"
             className={styles.cta}
             onClick={(e) => {
               e.stopPropagation();
-              handleMenopause();
+              void continueWithParcours('menopause');
             }}
           >
-            Je choisis ce parcours
+            Choisir ce parcours
           </button>
-        </div>
+        </article>
       </section>
 
       <aside className={styles.legalNote}>

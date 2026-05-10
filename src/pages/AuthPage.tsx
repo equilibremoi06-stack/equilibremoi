@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { applyUserFlags, getCurrentUser, syncPremiumStatus } from '../lib/authFlow';
 import { sendWelcomeEmail } from '../lib/emailEvents';
+import { getUserOnboardingStatus, restoreCompletedOnboardingLocally, saveOnboardingProgress } from '../lib/onboardingStatus';
 import { getSupabase } from '../lib/supabaseClient';
+import { getStoredParcours, syncSelectedParcoursSupabase } from '../lib/userParcours';
 import styles from './AuthPage.module.css';
 
 type Mode = 'signin' | 'signup';
@@ -42,7 +44,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [loading, setLoading] = useState(false);
-  const next = params.get('next') || '/offres';
+  const next = params.get('next') || '/onboarding';
 
   const supabase = getSupabase();
 
@@ -50,6 +52,21 @@ export default function AuthPage() {
     if (!user) return;
     applyUserFlags(user);
     await syncPremiumStatus(user);
+    const existingStatus = await getUserOnboardingStatus(user);
+    if (existingStatus.onboardingCompleted) {
+      restoreCompletedOnboardingLocally(existingStatus);
+      navigate('/app', { replace: true });
+      return;
+    }
+    await syncSelectedParcoursSupabase(user);
+    const storedParcours = getStoredParcours();
+    if (storedParcours) {
+      await saveOnboardingProgress(user, {
+        parcoursType: storedParcours,
+        onboardingCompleted: false,
+        onboardingStep: 0,
+      });
+    }
     navigate(next, { replace: true });
   };
 
@@ -58,7 +75,25 @@ export default function AuthPage() {
     let mounted = true;
     getCurrentUser().then((user) => {
       if (!mounted || !user) return;
-      syncPremiumStatus(user).finally(() => navigate(next, { replace: true }));
+      Promise.all([syncPremiumStatus(user)])
+        .then(async () => {
+          const existingStatus = await getUserOnboardingStatus(user);
+          if (existingStatus.onboardingCompleted) {
+            restoreCompletedOnboardingLocally(existingStatus);
+            navigate('/app', { replace: true });
+            return;
+          }
+          await syncSelectedParcoursSupabase(user);
+          const storedParcours = getStoredParcours();
+          if (storedParcours) {
+            await saveOnboardingProgress(user, {
+              parcoursType: storedParcours,
+              onboardingCompleted: false,
+              onboardingStep: 0,
+            });
+          }
+          navigate(next, { replace: true });
+        });
     });
     return () => {
       mounted = false;
@@ -66,7 +101,7 @@ export default function AuthPage() {
   }, [navigate, next, supabase]);
 
   if (!supabase) {
-    return <Navigate to="/landing" replace />;
+    return <Navigate to="/offres" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -77,6 +77,31 @@ export function persistClassiqueSnapshot(snapshot: ClassiqueSnapshotV1): boolean
   }
 }
 
+export function createDefaultClassiqueSnapshot(): ClassiqueSnapshotV1 {
+  return {
+    v: 1,
+    phase: "result",
+    step: 5,
+    analysisIndex: 4,
+    targetKg: "3",
+    timeline: "3 mois",
+    diet: "Omnivore",
+    allergies: "",
+    dislikes: "",
+    budget: "40€",
+    rhythm: "Calme",
+    activeWeek: 0,
+    activeDay: new Date().getDay() === 0 ? 6 : new Date().getDay() - 1,
+    goalValidationResult: null,
+    validationState: {},
+    replaceCountByDay: {},
+    replaceInfo: "",
+    activeTab: "accueil",
+    selectedEmotion: null,
+    coursesDays: 7,
+  };
+}
+
 export function hasClassiqueOnboardingComplete(): boolean {
   if (!canUseStorage()) return false;
   return localStorage.getItem(CLASSIQUE_ONBOARDING_KEY) === "true";

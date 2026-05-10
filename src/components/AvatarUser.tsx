@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
+import { useUserAccess } from '../context/UserAccessContext';
+import { hasPremiumEntitlements, type AuthUserLike } from '../lib/authFlow';
 import { getSupabase } from '../lib/supabaseClient';
+import styles from './AvatarUser.module.css';
 
 type AvatarUserProps = {
-  user: User | null;
+  user: AuthUserLike;
 };
 
 export default function AvatarUser({ user }: AvatarUserProps) {
@@ -32,14 +34,20 @@ export default function AvatarUser({ user }: AvatarUserProps) {
   }, [user]);
 
   const displayEmail = user?.email || 'utilisatrice';
+  const { access, profile: accessProfile } = useUserAccess();
+  const isAdmin =
+    access.isAdmin || accessProfile?.is_admin === true || accessProfile?.role === 'admin';
+  const premiumActive = hasPremiumEntitlements(access, accessProfile);
 
   const onSignOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
     localStorage.removeItem('isPremium');
+    localStorage.removeItem('isAdmin');
     localStorage.removeItem('equilibremoi_is_admin');
+    localStorage.removeItem('userRole');
     setOpen(false);
-    navigate('/auth', { replace: true });
+    navigate('/offres', { replace: true });
   };
 
   const onProfile = () => {
@@ -47,40 +55,97 @@ export default function AvatarUser({ user }: AvatarUserProps) {
     navigate('/app?tab=profil');
   };
 
+  const onClassicProgram = () => {
+    setOpen(false);
+    navigate('/app?parcours=classique&tab=programme');
+  };
+
+  const onMenopauseProgram = () => {
+    setOpen(false);
+    navigate('/app?parcours=menopause&tab=programme');
+  };
+
+  const onPremium = () => {
+    setOpen(false);
+    navigate('/premium');
+  };
+
+  const onAdmin = () => {
+    setOpen(false);
+    navigate('/app?tab=recettes');
+  };
+
   if (!user) return null;
 
   return (
-    <div className="relative mr-4 flex items-center" ref={menuRef}>
+    <div className={styles.wrap} ref={menuRef}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-[#1A2E22] bg-gradient-to-br from-[#F2A7B0] via-[#FAF7F2] to-[#C8A44A] border border-white shadow-[0_8px_20px_rgba(26,46,34,0.12)] overflow-hidden hover:scale-[1.03] transition"
+        className={`${styles.avatarButton} ${premiumActive ? styles.avatarButtonPremium : ''}`}
+        aria-label="Ouvrir le menu utilisateur"
+        aria-expanded={open}
       >
         {letter}
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full mt-3 min-w-[220px] bg-white/95 backdrop-blur-sm rounded-2xl border border-[#F6E3E7] shadow-[0_18px_40px_rgba(26,46,34,0.14)] p-2 z-50">
-          <div className="flex items-center gap-3 rounded-xl px-3 py-2">
-            <span className="h-8 w-8 rounded-full border border-white overflow-hidden bg-gradient-to-br from-[#F2A7B0] via-[#FAF7F2] to-[#C8A44A] text-[#1A2E22] font-bold flex items-center justify-center">
+        <div className={styles.menu}>
+          <div className={styles.identity}>
+            <span className={styles.identityAvatar}>
               {letter}
             </span>
-            <span className="max-w-[150px] truncate text-xs font-medium text-[#7A8C82]">{displayEmail}</span>
+            <div className={styles.identityTextBlock}>
+              <span className={styles.identityText}>{displayEmail}</span>
+              {premiumActive ? (
+                <span className={styles.premiumBadge}>Premium actif ✨</span>
+              ) : null}
+            </div>
           </div>
-          <div className="my-1 h-px bg-[#F6E3E7]" />
+          <div className={styles.separator} />
           <button
             type="button"
             onClick={onProfile}
-            className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-[#1A2E22] transition hover:bg-[#FAF7F2]"
+            className={styles.menuItem}
           >
-            Mon profil
+            Profil
+          </button>
+          <button
+            type="button"
+            onClick={onClassicProgram}
+            className={styles.menuItem}
+          >
+            Programme normal
+          </button>
+          <button
+            type="button"
+            onClick={onMenopauseProgram}
+            className={styles.menuItem}
+          >
+            Programme ménopause
+          </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={onAdmin}
+              className={`${styles.menuItem} ${styles.adminItem}`}
+            >
+              Admin
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onPremium}
+            className={styles.menuItem}
+          >
+            ✨ Premium
           </button>
           <button
             type="button"
             onClick={onSignOut}
-            className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-[#F87171] transition hover:bg-[#FEF2F2] hover:text-[#D35F7A]"
+            className={`${styles.menuItem} ${styles.signOut}`}
           >
-            Se déconnecter
+            Déconnexion
           </button>
         </div>
       ) : null}

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import styles from './HomePage.module.css';
 
+const chooseParcoursPath = '/choix-parcours';
+
 export default function HomePage() {
   return (
     <div className={styles.page}>
@@ -18,7 +20,7 @@ export default function HomePage() {
           Je suis là pour t’accompagner, vraiment, à ton rythme ✨
         </p>
         <p className={styles.heroLandingLink}>
-          <Link to="/auth">Je commence ✨</Link>
+          <Link to={chooseParcoursPath}>Je commence ✨</Link>
         </p>
       </section>
 
@@ -73,8 +75,7 @@ export default function HomePage() {
         <div className={styles.parcoursGrid}>
           <Link
             className={styles.parcoursCard}
-            to="/auth"
-            onClick={() => localStorage.setItem('parcours', 'classique')}
+            to={chooseParcoursPath}
             aria-label="Équilibre au quotidien — voir les offres"
           >
             <span className={styles.parcoursBadge}>Pour tous les jours</span>
@@ -92,8 +93,7 @@ export default function HomePage() {
           </Link>
           <Link
             className={`${styles.parcoursCard} ${styles.parcoursCardHighlight}`}
-            to="/auth"
-            onClick={() => localStorage.setItem('parcours', 'menopause')}
+            to={chooseParcoursPath}
             aria-label="Parcours ménopause — voir les offres"
           >
             <span className={styles.parcoursBadge}>Spécial ménopause</span>

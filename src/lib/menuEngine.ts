@@ -482,8 +482,44 @@ export function replaceMeal(
   return next ?? null;
 }
 
+export function getMealAlternatives(
+  currentMeal: Meal,
+  type: MealType,
+  profile: UserFoodProfile,
+  excludedMealIds: string[],
+  limit: number,
+): Meal[] {
+  const usedThisWeek = new Set<string>(excludedMealIds);
+  const season = getCurrentSeason();
+  const avoidIds = new Set<string>([currentMeal.id]);
+  const history: MealHistoryItem[] = excludedMealIds.map((id, index) => {
+    const found = mealDatabase.find((meal) => meal.id === id);
+    return {
+      mealId: id,
+      weekNumber: 1,
+      dayNumber: index + 1,
+      type: found?.type ?? type,
+      tags: found?.tags ?? [],
+      ingredients: found?.ingredients ?? [],
+    };
+  });
+
+  return getCompatibleMealsByType(type, profile)
+    .filter((meal) => !avoidIds.has(meal.id))
+    .map((meal) => ({
+      meal,
+      score: scoreMealVariety(meal, type, profile, 1, 1, usedThisWeek, history, season),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.max(1, limit))
+    .map(({ meal }) => meal);
+}
+
+export const FREE_MEAL_ALTERNATIVE_LIMIT = 2;
+export const PREMIUM_MEAL_ALTERNATIVE_LIMIT = 6;
+
 export function getDailyReplacementLimit(isPremium: boolean): number {
-  return isPremium ? 5 : 2;
+  return isPremium ? PREMIUM_MEAL_ALTERNATIVE_LIMIT : FREE_MEAL_ALTERNATIVE_LIMIT;
 }
 
 export function buildPersonalizationSummary(profile: UserFoodProfile): string[] {

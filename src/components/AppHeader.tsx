@@ -1,40 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { User } from '@supabase/supabase-js';
-import { getSupabase } from '../lib/supabaseClient';
+import { applyUserFlags, hasPremiumEntitlements } from '../lib/authFlow';
+import { useUserAccess } from '../context/UserAccessContext';
 import AvatarUser from './AvatarUser';
+import styles from './AppHeader.module.css';
 
 export function AppHeader() {
-  const supabase = getSupabase();
   const location = useLocation();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, profile, access } = useUserAccess();
+  const premiumActive = hasPremiumEntitlements(access, profile);
 
   useEffect(() => {
-    if (!supabase) return;
-    let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!mounted) return;
-      setUser(data.user ?? null);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
-  }, [supabase]);
+    if (user) {
+      applyUserFlags(user, profile ?? undefined);
+    }
+  }, [user, profile]);
 
-  const showAvatar = Boolean(user) && location.pathname === '/app';
-
+  const showAvatar = Boolean(user) && !['/login', '/auth'].includes(location.pathname);
   return (
-    <header className="w-full border-b border-[#F6E3E7] bg-[#FAF7F2]">
-      <div className="mx-auto flex w-full max-w-[1126px] items-center justify-between px-6 py-4">
-        <div>
-          <h1 className="m-0 font-['Cormorant_Garamond',serif] text-2xl font-semibold leading-none text-[#1A2E22]">EquilibreMoi</h1>
-          <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#7A8C82]">bien-être féminin</p>
+    <header className={styles.header}>
+      <div className={styles.inner}>
+        <div className={styles.brandBlock}>
+          <h1 className={styles.logoText}>EquilibreMoi</h1>
+          <p className={styles.logoSub}>bien-être féminin</p>
+          {premiumActive ? (
+            <span className={styles.premiumHeaderPill} title="Premium actif">
+              Premium actif ✨
+            </span>
+          ) : null}
         </div>
-        <div className="ml-auto flex items-center">{showAvatar ? <AvatarUser user={user} /> : null}</div>
+        <div className={styles.userBlock}>
+          {showAvatar ? <AvatarUser user={user} /> : null}
+        </div>
       </div>
     </header>
   );
