@@ -3,6 +3,9 @@ export type BudgetType = 'low' | 'medium' | 'high';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter';
 
+/** `all` = recette intemporelle (neutre pour la couche « priorité saison »). */
+export type SeasonScope = SeasonType | 'all';
+
 export type Meal = {
   id: string;
   name: string;
@@ -11,7 +14,7 @@ export type Meal = {
   budget: BudgetType[];
   prepTime: 'quick' | 'standard';
   caloriesLevel: 'light' | 'balanced' | 'satisfying';
-  season: SeasonType[];
+  season: SeasonScope[];
   tags: string[];
   ingredients: string[];
   description?: string;
@@ -21,8 +24,6 @@ export type Meal = {
 const ALL_DIETS: DietType[] = ['omnivore', 'vegetarian', 'vegan', 'pescetarian'];
 const FISH_DIETS: DietType[] = ['omnivore', 'pescetarian'];
 const OMNIVORE_ONLY: DietType[] = ['omnivore'];
-const ALL_SEASONS: SeasonType[] = ['spring', 'summer', 'autumn', 'winter'];
-
 export const mealDatabase: Meal[] = [
   {
     id: 'b1',
@@ -32,7 +33,7 @@ export const mealDatabase: Meal[] = [
     budget: ['low', 'medium'],
     prepTime: 'quick',
     caloriesLevel: 'balanced',
-    season: ALL_SEASONS,
+    season: ['spring', 'summer', 'autumn'],
     ingredients: ['Yaourt grec', 'Fruits rouges', 'Granola', 'Miel'],
     tags: ['bowl', 'fresh', 'protein:dairy', 'quick'],
   },
@@ -44,7 +45,7 @@ export const mealDatabase: Meal[] = [
     budget: ['medium', 'high'],
     prepTime: 'quick',
     caloriesLevel: 'satisfying',
-    season: ALL_SEASONS,
+    season: ['all'],
     ingredients: ['Pain complet', 'Avocat', 'Oeuf', 'Citron'],
     tags: ['toast', 'protein:egg', 'comfort', 'quick'],
   },
@@ -56,9 +57,81 @@ export const mealDatabase: Meal[] = [
     budget: ['low', 'medium'],
     prepTime: 'quick',
     caloriesLevel: 'balanced',
-    season: ['autumn', 'winter', 'spring'],
+    season: ['all'],
     ingredients: ["Flocons d'avoine", 'Lait végétal', 'Banane', 'Cannelle'],
     tags: ['warm', 'veggie', 'budget', 'quick'],
+  },
+  {
+    id: 'b4',
+    name: 'Fromage blanc, pomme, noix & cannelle',
+    type: 'breakfast',
+    diets: ['omnivore', 'vegetarian', 'pescetarian'],
+    budget: ['low', 'medium'],
+    prepTime: 'quick',
+    caloriesLevel: 'light',
+    season: ['autumn', 'winter', 'spring'],
+    ingredients: ['Fromage blanc ou yaourt nature', 'Pomme', 'Noix', 'Cannelle'],
+    tags: ['fresh', 'protein:dairy', 'quick'],
+  },
+  {
+    id: 'b5',
+    name: 'Smoothie bowl banane-cacao & graines',
+    type: 'breakfast',
+    diets: ALL_DIETS,
+    budget: ['low', 'medium'],
+    prepTime: 'quick',
+    caloriesLevel: 'balanced',
+    season: ['spring', 'summer', 'autumn'],
+    ingredients: ['Banane', 'Lait végétal', 'Cacao maigre', 'Graines de chia', 'Fruits rouges'],
+    tags: ['bowl', 'veggie', 'fresh', 'quick'],
+  },
+  {
+    id: 'b6',
+    name: 'Muffins aux œufs, épinards & feta',
+    type: 'breakfast',
+    diets: ['omnivore', 'vegetarian', 'pescetarian'],
+    budget: ['low', 'medium'],
+    prepTime: 'quick',
+    caloriesLevel: 'satisfying',
+    season: ['spring', 'summer', 'autumn'],
+    ingredients: ['Œufs', 'Épinards', 'Feta', 'Lait (ou végétal)'],
+    tags: ['protein:egg', 'comfort', 'batch', 'quick'],
+  },
+  {
+    id: 'b7',
+    name: 'Pain complet, purée d’amande & fruits rouges',
+    type: 'breakfast',
+    diets: ALL_DIETS,
+    budget: ['low', 'medium'],
+    prepTime: 'quick',
+    caloriesLevel: 'balanced',
+    season: ['all'],
+    ingredients: ['Pain complet', 'Purée d’amande', 'Fruits rouges ou myrtilles'],
+    tags: ['toast', 'veggie', 'fresh', 'quick'],
+  },
+  {
+    id: 'b8',
+    name: 'Bol ricotta, tomates cerises & basilic',
+    type: 'breakfast',
+    diets: ['omnivore', 'vegetarian', 'pescetarian'],
+    budget: ['medium', 'high'],
+    prepTime: 'quick',
+    caloriesLevel: 'light',
+    season: ['spring', 'summer'],
+    ingredients: ['Ricotta', 'Tomates cerises', 'Basilic', 'Huile d’olive', 'Pain complet'],
+    tags: ['fresh', 'protein:dairy', 'quick'],
+  },
+  {
+    id: 'b9',
+    name: 'Bagel complet, houmous & concombre',
+    type: 'breakfast',
+    diets: ALL_DIETS,
+    budget: ['low', 'medium'],
+    prepTime: 'quick',
+    caloriesLevel: 'balanced',
+    season: ['all'],
+    ingredients: ['Bagel ou pain complet', 'Houmous', 'Concombre', 'Graines de sésame'],
+    tags: ['veggie', 'fresh', 'protein:legume', 'quick'],
   },
   {
     id: 'l1',
@@ -109,6 +182,18 @@ export const mealDatabase: Meal[] = [
     tags: ['bowl', 'protein:fish', 'fresh', 'quick'],
   },
   {
+    id: 'l5',
+    name: 'Pâtes complètes, légumes rôtis & copeaux de parmesan',
+    type: 'lunch',
+    diets: ['omnivore', 'vegetarian', 'pescetarian'],
+    budget: ['low', 'medium'],
+    prepTime: 'standard',
+    caloriesLevel: 'balanced',
+    season: ['spring', 'summer'],
+    ingredients: ['Pâtes complètes', 'Courgette', 'Aubergine', 'Parmesan', "Huile d'olive"],
+    tags: ['pasta', 'veggie', 'warm', 'batch'],
+  },
+  {
     id: 'd1',
     name: 'Filet de cabillaud & légumes vapeur',
     type: 'dinner',
@@ -116,7 +201,7 @@ export const mealDatabase: Meal[] = [
     budget: ['medium', 'high'],
     prepTime: 'standard',
     caloriesLevel: 'light',
-    season: ALL_SEASONS,
+    season: ['all'],
     ingredients: ['Cabillaud', 'Brocoli', 'Carottes', 'Citron', 'Herbes de Provence'],
     tags: ['light', 'protein:fish', 'simple'],
   },
@@ -140,9 +225,21 @@ export const mealDatabase: Meal[] = [
     budget: ['low', 'medium'],
     prepTime: 'quick',
     caloriesLevel: 'balanced',
-    season: ALL_SEASONS,
+    season: ['autumn', 'winter', 'spring'],
     ingredients: ['Oeufs', 'Champignons', 'Fromage de chèvre', 'Ciboulette'],
     tags: ['protein:egg', 'quick', 'comfort'],
+  },
+  {
+    id: 'd4',
+    name: 'Saumon en papillote & haricots verts',
+    type: 'dinner',
+    diets: FISH_DIETS,
+    budget: ['medium', 'high'],
+    prepTime: 'quick',
+    caloriesLevel: 'balanced',
+    season: ['spring', 'summer'],
+    ingredients: ['Pavé de saumon', 'Haricots verts', 'Citron', 'Aneth', 'Huile d’olive'],
+    tags: ['light', 'protein:fish', 'quick'],
   },
   {
     id: 's1',
@@ -152,7 +249,7 @@ export const mealDatabase: Meal[] = [
     budget: ['low', 'medium'],
     prepTime: 'quick',
     caloriesLevel: 'light',
-    season: ALL_SEASONS,
+    season: ['all'],
     ingredients: ['Pomme', 'Amandes', 'Chocolat noir'],
     tags: ['fresh', 'quick', 'snack'],
   },

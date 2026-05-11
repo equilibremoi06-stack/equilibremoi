@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DailyQuotePopup } from '../components/DailyQuotePopup';
 import { PremiumHubPanel } from '../components/premium/PremiumHubPanel';
 import MedicalAcknowledgmentPage from './MedicalAcknowledgmentPage';
-import type { DietType, Meal as EngineMeal } from '../data/mealDatabase';
+import type { DietType, Meal as EngineMeal, SeasonScope, SeasonType } from '../data/mealDatabase';
 import {
   getIngredientDisplayParts,
   RECIPE_PORTION_DISCLAIMER,
@@ -56,6 +56,7 @@ import {
   type UserFoodProfile,
 } from '../lib/menuEngine';
 import { type ClassiqueSnapshotV1, loadClassiqueSnapshot, persistClassiqueSnapshot } from '../lib/appSession';
+import { buildCoherentRecipeTips, mealTimeToSlot } from '../lib/recipeCoherentTips';
 import { getCoursesDaysLimit } from '../lib/shoppingList';
 import styles from './QuestionnaireClassiquePage.module.css';
 
@@ -108,6 +109,17 @@ function formatProgramCreatedDate(value: string | null): string {
   }).format(date);
 }
 
+function mergeValidationRecord(
+  prev: Record<string, boolean>,
+  incoming: Record<string, boolean>,
+): Record<string, boolean> {
+  const out = { ...prev };
+  for (const [k, v] of Object.entries(incoming)) {
+    if (v) out[k] = true;
+  }
+  return out;
+}
+
 function buildValidationStateFromRows(
   rows: PersistedMealValidation[],
   programWeeks: GeneratedWeek[]
@@ -137,6 +149,49 @@ function buildValidationStateFromRows(
 
   return next;
 }
+
+const MEAL_SLOTS_FOR_DAY_COMPLETE: MealSlot[] = ['breakfast', 'lunch', 'dinner'];
+
+function isProgramDayFullyValidated(
+  validationState: Record<string, boolean>,
+  weekIndex: number,
+  dayIndex: number,
+  dayPlan: GeneratedWeek['days'][number] | undefined,
+): boolean {
+  if (!dayPlan) return false;
+  return MEAL_SLOTS_FOR_DAY_COMPLETE.every((slot) => {
+    if (!dayPlan[slot]) return true;
+    return Boolean(validationState[`${weekIndex}-${dayIndex}-${slot}`]);
+  });
+}
+
+/**
+ * Première journée encore incomplète (0–n semaines du programme), d'après les validations enregistrées uniquement.
+ * Si tout est complété dans la plage, retourne le dernier jour du dernier créneau scanné.
+ */
+function findFirstIncompleteProgramDay(
+  validationState: Record<string, boolean>,
+  programWeeks: GeneratedWeek[],
+  weeksToScan: number,
+): { weekIndex: number; dayIndex: number } {
+  const weekCap = Math.min(Math.max(1, weeksToScan), Math.max(1, programWeeks.length));
+  for (let w = 0; w < weekCap; w += 1) {
+    const week = programWeeks[w];
+    if (!week?.days?.length) continue;
+    for (let d = 0; d < week.days.length; d += 1) {
+      const dayPlan = week.days[d];
+      if (!dayPlan) continue;
+      if (!isProgramDayFullyValidated(validationState, w, d, dayPlan)) {
+        return { weekIndex: w, dayIndex: d };
+      }
+    }
+  }
+  const lastW = Math.max(0, weekCap - 1);
+  const lastWeek = programWeeks[lastW];
+  const lastD = lastWeek?.days?.length ? lastWeek.days.length - 1 : 0;
+  return { weekIndex: lastW, dayIndex: lastD };
+}
+
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
 const APP_TABS: { id: AppTab; label: string }[] = [
   { id: 'accueil', label: 'Accueil' },
@@ -229,6 +284,14 @@ const SEASON_FR: Record<string, string> = {
   autumn: 'automne',
   winter: 'hiver',
 };
+
+/** Pastille saison sur la carte repas : seulement si le repas « résonne » avec la saison calendaire (pas de confusion hiver/été). */
+function seasonBadgeForMeal(scopes: readonly SeasonScope[], current: SeasonType): string | null {
+  if (!scopes.length) return null;
+  if (scopes.includes('all')) return null;
+  if (scopes.includes(current)) return SEASON_TAG_LABEL[current] ?? null;
+  return null;
+}
 
 const RECIPE_CATEGORY_LABEL: Record<string, string> = {
   rapide: 'Rapide',
@@ -522,13 +585,12 @@ export default function QuestionnaireClassiquePage({
       })
       .then((rows) => {
         if (!mounted) return;
-        setValidationState(buildValidationStateFromRows(rows, programWeeks));
+        setValidationState((prev) =>
+          mergeValidationRecord(prev, buildValidationStateFromRows(rows, programWeeks)),
+        );
       })
       .catch((error) => {
         console.warn('[QuestionnaireClassiquePage] chargement validations repas échoué', error);
-        if (mounted) {
-          setValidationState({});
-        }
       });
 
     return () => {
@@ -727,6 +789,29 @@ export default function QuestionnaireClassiquePage({
     if (phase !== 'result') return;
     setActiveWeek((w) => Math.min(w, Math.max(0, accessibleProgramWeeks - 1)));
   }, [phase, accessibleProgramWeeks]);
+
+  /** Si la journée affichée est complète (3/3), avancer vers la prochaine journée incomplète — basé sur les validations, pas sur la date système. */
+  useEffect(() => {
+    if (phase !== 'result' || programWeeks.length === 0) return;
+    const week = programWeeks[activeWeek];
+    const dayPlan = week?.days?.[activeDay];
+    if (!dayPlan) return;
+    const currentComplete = isProgramDayFullyValidated(validationState, activeWeek, activeDay, dayPlan);
+    if (!currentComplete) return;
+
+    const target = findFirstIncompleteProgramDay(validationState, programWeeks, accessibleProgramWeeks);
+    if (target.weekIndex !== activeWeek || target.dayIndex !== activeDay) {
+      setActiveWeek(target.weekIndex);
+      setActiveDay(target.dayIndex);
+    }
+  }, [
+    phase,
+    programWeeks,
+    validationState,
+    accessibleProgramWeeks,
+    activeWeek,
+    activeDay,
+  ]);
 
   useEffect(() => {
     if (phase !== 'analyzing') return undefined;
@@ -1661,10 +1746,13 @@ export default function QuestionnaireClassiquePage({
         profile,
         recentIds,
         altLimit,
+        { expandPoolWhenSparse: hasPremiumAccess },
       );
       const fallbackAlternatives = alternatives.length
         ? alternatives
-        : getMealAlternatives(currentMeal as EngineMeal, slot, profile, [currentMeal.id], altLimit);
+        : getMealAlternatives(currentMeal as EngineMeal, slot, profile, [currentMeal.id], altLimit, {
+            expandPoolWhenSparse: hasPremiumAccess,
+          });
       if (!fallbackAlternatives.length) {
         const replacement = replaceMeal(currentMeal as EngineMeal, slot, profile, [currentMeal.id]);
         if (!replacement) {
@@ -1677,10 +1765,20 @@ export default function QuestionnaireClassiquePage({
       }
 
       setReplacementPicker({ slot, options: fallbackAlternatives as EngineMeal[] });
+      const shown = fallbackAlternatives.length;
+      const altCap = hasPremiumAccess ? PREMIUM_MEAL_ALTERNATIVE_LIMIT : FREE_MEAL_ALTERNATIVE_LIMIT;
       setReplaceInfo(
         hasPremiumAccess
-          ? `Choisis parmi ${PREMIUM_MEAL_ALTERNATIVE_LIMIT} alternatives Premium cohérentes avec ton profil.`
-          : `Choisis parmi ${FREE_MEAL_ALTERNATIVE_LIMIT} alternatives cohérentes avec ton profil.`,
+          ? shown >= altCap
+            ? `Choisis parmi jusqu’à ${altCap} alternatives cohérentes avec ton profil.`
+            : shown === 1
+              ? '1 alternative cohérente disponible aujourd’hui.'
+              : `${shown} alternatives cohérentes disponibles aujourd’hui.`
+          : shown >= altCap
+            ? `Choisis parmi ${FREE_MEAL_ALTERNATIVE_LIMIT} alternatives au programme gratuit.`
+            : shown === 1
+              ? '1 alternative cohérente disponible avec ton profil gratuit.'
+              : `${shown} alternatives cohérentes avec ton profil gratuit.`,
       );
     };
 
@@ -2519,16 +2617,20 @@ export default function QuestionnaireClassiquePage({
                           <li key={`${idx}-${step}`}>{step}</li>
                         ))}
                       </ol>
-                      {selectedCatalogRecipe.tips?.length ? (
-                        <>
-                          <h5 className={styles.recipeSheetSection}>Conseils</h5>
-                          <ul className={styles.recipeSheetList}>
-                            {selectedCatalogRecipe.tips.map((tip) => (
-                              <li key={tip}>{tip}</li>
-                            ))}
-                          </ul>
-                        </>
-                      ) : null}
+                      <h5 className={styles.recipeSheetSection}>Conseils</h5>
+                      <ul className={styles.recipeSheetList}>
+                        {buildCoherentRecipeTips({
+                          slot: mealTimeToSlot(selectedCatalogRecipe.mealTime),
+                          mealId: selectedCatalogRecipe.id,
+                          mealName: selectedCatalogRecipe.title,
+                          mealIngredients: selectedCatalogRecipe.ingredients.map((i) => i.name),
+                          recipeTags: selectedCatalogRecipe.tags,
+                          recipeCategory: selectedCatalogRecipe.category,
+                          season,
+                        }).map((tip) => (
+                          <li key={tip}>{tip}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -3058,9 +3160,7 @@ export default function QuestionnaireClassiquePage({
                   const timeEmoji = SLOT_TIME_EMOJI[slot];
                   const slotLabel = SLOT_MEAL_LABEL[slot];
                   const ingredientPreview = meal.ingredients.slice(0, 4).join(' · ');
-                  const seasonKey = meal.season[0];
-                  const seasonLine =
-                    seasonKey && SEASON_TAG_LABEL[seasonKey] ? SEASON_TAG_LABEL[seasonKey] : null;
+                  const seasonLine = seasonBadgeForMeal(meal.season, season);
                   const energyLine = MEAL_ENERGY_LINE[meal.caloriesLevel] ?? 'Repas équilibré';
                   const mealCardClass =
                     slot === 'breakfast'
@@ -3138,9 +3238,9 @@ export default function QuestionnaireClassiquePage({
                   <span className={styles.recipeModalBadgeMeal}>
                     {SLOT_TIME_EMOJI[recipeModal.slot]} {SLOT_MEAL_LABEL[recipeModal.slot]}
                   </span>
-                  {recipeModal.meal.season[0] && SEASON_TAG_LABEL[recipeModal.meal.season[0]] ? (
+                  {seasonBadgeForMeal(recipeModal.meal.season, season) ? (
                     <span className={styles.recipeModalBadgeSeason}>
-                      {SEASON_TAG_LABEL[recipeModal.meal.season[0]]}
+                      {seasonBadgeForMeal(recipeModal.meal.season, season)}
                     </span>
                   ) : null}
                   {buildProgrammeRecipeBadges(selectedRecipe, recipeModal.meal).map((label) => (
@@ -3248,17 +3348,18 @@ export default function QuestionnaireClassiquePage({
                         <h5 className={styles.recipeModalSectionTitle}>Astuces & substitutions</h5>
                       </div>
                       <div className={styles.recipeModalTips}>
-                        <p>
-                          Ajuste les quantités selon ta faim du jour : l’objectif est de rester confortable,
-                          pas de te forcer.
-                        </p>
-                        <p>
-                          Substitution douce : remplace une protéine par une autre équivalente que tu tolères bien,
-                          et garde la même base de légumes ou féculents.
-                        </p>
-                        <p>
-                          Si un aliment ne te convient pas, utilise la fonction “Changer ce repas” dans ton programme.
-                        </p>
+                        {buildCoherentRecipeTips({
+                          slot: recipeModal.slot,
+                          mealId: recipeModal.meal.id,
+                          mealName: recipeModal.meal.name,
+                          mealIngredients: recipeModal.meal.ingredients,
+                          caloriesLevel: recipeModal.meal.caloriesLevel,
+                          recipeTitle: selectedRecipe?.title,
+                          recipeTags: selectedRecipe?.tags,
+                          season,
+                        }).map((tip) => (
+                          <p key={tip}>{tip}</p>
+                        ))}
                       </div>
                     </section>
                   </>
@@ -3298,16 +3399,22 @@ export default function QuestionnaireClassiquePage({
                 <div className={styles.replacementPanelHead}>
                   <div>
                     <p className={styles.replacementKicker}>
-                      {hasPremiumAccess
-                        ? `${PREMIUM_MEAL_ALTERNATIVE_LIMIT} alternatives Premium`
-                        : `${FREE_MEAL_ALTERNATIVE_LIMIT} alternatives gratuites`}
+                      {replacementPicker.options.length === 0
+                        ? 'Aucune alternative'
+                        : `${replacementPicker.options.length} alternative${
+                            replacementPicker.options.length > 1 ? 's' : ''
+                          } ${hasPremiumAccess ? 'Premium' : 'au programme gratuit'}`}
                     </p>
                     <h4 className={styles.replacementTitle}>
                       Remplacer {SLOT_MEAL_LABEL[replacementPicker.slot].toLowerCase()}
                     </h4>
                     <p className={styles.replacementIntro}>
                       {hasPremiumAccess
-                        ? `Jusqu’à ${PREMIUM_MEAL_ALTERNATIVE_LIMIT} alternatives Premium, alignées avec ton profil, ton budget et la saison.`
+                        ? replacementPicker.options.length >= PREMIUM_MEAL_ALTERNATIVE_LIMIT
+                          ? `Jusqu’à ${PREMIUM_MEAL_ALTERNATIVE_LIMIT} idées cohérentes avec ton profil, ton budget et la saison.`
+                          : replacementPicker.options.length === 1
+                            ? '1 alternative cohérente disponible aujourd’hui avec ton profil et tes contraintes.'
+                            : `${replacementPicker.options.length} alternatives cohérentes disponibles aujourd’hui avec ton profil et tes contraintes.`
                         : replacementPicker.options.length === 1
                           ? '1 alternative cohérente avec ton profil est disponible.'
                           : `${replacementPicker.options.length} alternatives cohérentes avec ton profil sont disponibles.`}

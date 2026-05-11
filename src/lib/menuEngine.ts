@@ -4,6 +4,7 @@ import type {
   DietType,
   Meal,
   MealType,
+  SeasonScope,
   SeasonType,
 } from '../data/mealDatabase';
 
@@ -112,10 +113,24 @@ export function getCurrentSeason(date = new Date()): SeasonType {
   return 'winter';
 }
 
+/**
+ * Couche « saison » douce : jamais de filtrage, uniquement un bonus / léger malus dans le score.
+ * - Aligné avec la saison courante : priorité forte (sensation ~majorité saisonnière).
+ * - `all` : filet de repères intemporels (~neutre / « 30 % » possibles).
+ * - Saison non couverte : léger malus ; le repas reste sélectionnable (pas de blocage).
+ */
+export function scoreSeasonPreference(
+  scopes: readonly SeasonScope[],
+  current: SeasonType,
+): number {
+  if (!scopes.length) return 6;
+  if (scopes.some((s) => s === 'all')) return 6;
+  if (scopes.includes(current)) return 14;
+  return -2;
+}
+
 function scoreBySeasonFit(meal: Meal, season: SeasonType): number {
-  if (meal.season.includes(season)) return 14;
-  if (meal.season.length === 4) return 4;
-  return -3;
+  return scoreSeasonPreference(meal.season, season);
 }
 
 export function mapBudgetToLevel(budget?: number | null): BudgetType {
@@ -132,6 +147,37 @@ export function isMealCompatible(meal: Meal, profile: UserFoodProfile): boolean 
     const userBudget = mapBudgetToLevel(profile.budget);
     if (!meal.budget.includes(userBudget)) return false;
   }
+
+  if (profile.prepStyle === 'quick' && meal.prepTime !== 'quick') return false;
+
+  const restrictedWords = uniqueStrings([
+    ...profile.allergies,
+    ...profile.dislikes,
+  ]).map((item) => normalize(item));
+
+  if (!restrictedWords.length) return true;
+
+  const mealWords = [
+    meal.name,
+    ...meal.ingredients,
+    ...(meal.excludes ?? []),
+    ...meal.tags,
+  ];
+
+  return !includesAnyKeyword(mealWords, restrictedWords);
+}
+
+/** Budget élargi (palier voisin) — uniquement pour compléter les alternatives Premium sans toucher au menu du jour. */
+function isMealCompatibleRelaxedBudgetOnly(meal: Meal, profile: UserFoodProfile): boolean {
+  if (!meal.diets.includes(profile.diet)) return false;
+
+  const userBudget = mapBudgetToLevel(profile.budget);
+  const neighbor: Record<BudgetType, BudgetType[]> = {
+    low: ['low', 'medium'],
+    medium: ['low', 'medium', 'high'],
+    high: ['medium', 'high'],
+  };
+  if (!neighbor[userBudget].some((b) => meal.budget.includes(b))) return false;
 
   if (profile.prepStyle === 'quick' && meal.prepTime !== 'quick') return false;
 
@@ -482,17 +528,28 @@ export function replaceMeal(
   return next ?? null;
 }
 
+export type GetMealAlternativesOptions = {
+  /**
+   * Si le pool « strict » (même filtres que la génération du programme) est petit,
+   * ajoute des repas du même moment de la journée qui restent cohérents régime / allergies / rythme,
+   * en élargissant légèrement le budget (palier adjacent). Réservé au Premium ; pas de tirage “aléatoire hors profil”.
+   */
+  expandPoolWhenSparse?: boolean;
+};
+
 export function getMealAlternatives(
   currentMeal: Meal,
   type: MealType,
   profile: UserFoodProfile,
   excludedMealIds: string[],
   limit: number,
+  options?: GetMealAlternativesOptions,
 ): Meal[] {
-  const usedThisWeek = new Set<string>(excludedMealIds);
+  const safeExcluded = excludedMealIds.filter(Boolean);
+  const usedThisWeek = new Set<string>(safeExcluded);
   const season = getCurrentSeason();
-  const avoidIds = new Set<string>([currentMeal.id]);
-  const history: MealHistoryItem[] = excludedMealIds.map((id, index) => {
+  const avoidIds = new Set<string>([currentMeal.id, ...safeExcluded]);
+  const history: MealHistoryItem[] = safeExcluded.map((id, index) => {
     const found = mealDatabase.find((meal) => meal.id === id);
     return {
       mealId: id,
@@ -504,15 +561,46 @@ export function getMealAlternatives(
     };
   });
 
-  return getCompatibleMealsByType(type, profile)
-    .filter((meal) => !avoidIds.has(meal.id))
+  const strictPool = getCompatibleMealsByType(type, profile).filter(
+    (meal) => !avoidIds.has(meal.id),
+  );
+
+  const expand =
+    Boolean(options?.expandPoolWhenSparse) &&
+    profile.isPremium &&
+    strictPool.length < limit;
+
+  let pool: Meal[] = strictPool;
+
+  if (expand) {
+    const strictIds = new Set(strictPool.map((m) => m.id));
+    const relaxedAdds = mealDatabase.filter(
+      (meal) =>
+        meal.type === type &&
+        !avoidIds.has(meal.id) &&
+        !strictIds.has(meal.id) &&
+        isMealCompatibleRelaxedBudgetOnly(meal, profile),
+    );
+    pool = [...strictPool, ...relaxedAdds];
+  }
+
+  const ranked = pool
     .map((meal) => ({
       meal,
       score: scoreMealVariety(meal, type, profile, 1, 1, usedThisWeek, history, season),
     }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, Math.max(1, limit))
-    .map(({ meal }) => meal);
+    .sort((a, b) => b.score - a.score);
+
+  const seen = new Set<string>();
+  const deduped: { meal: Meal; score: number }[] = [];
+  for (const row of ranked) {
+    if (seen.has(row.meal.id)) continue;
+    seen.add(row.meal.id);
+    deduped.push(row);
+  }
+
+  const cap = Math.max(0, limit);
+  return deduped.slice(0, cap).map(({ meal }) => meal);
 }
 
 export const FREE_MEAL_ALTERNATIVE_LIMIT = 2;
@@ -564,10 +652,11 @@ export function buildPersonalizationSummary(profile: UserFoodProfile): string[] 
 
 export function buildSeasonNote(season: SeasonType): string {
   const notes: Record<SeasonType, string> = {
-    spring: 'Des repas plus frais et légers pour accompagner le printemps ✨',
-    summer: 'Des idées plus fraîches, simples et ensoleillées pour l’été ☀️',
-    autumn: 'Des repas doux et réconfortants pour accompagner l’automne 🍂',
-    winter: 'Des assiettes plus cocooning et rassasiantes pour l’hiver ❄️',
+    spring:
+      'Une pointe de fraîcheur printanière — repas légers, équilibrés, tout en douceur ✨',
+    summer: 'Des assiettes fraîches, légères et colorées — comme une pause bienvenue ☀️',
+    autumn: 'Des saveurs réconfortantes et une assiette chaleureuse pour accompagner l’automne 🍂',
+    winter: 'Des repas réconfortants, moment cocooning, saveurs douces pour l’hiver ❄️',
   };
 
   return notes[season];

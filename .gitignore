@@ -10,6 +10,15 @@ lerna-debug.log*
 node_modules
 dist
 
+# Local env overrides (ne pas versionner les secrets machines)
+.env.local
+.env.*.local
+
+# Caches outils
+.cache
+*.tsbuildinfo
+.turbo
+
 # Supabase CLI cache (machine locale)
 supabase/.temp/
 dist-ssr

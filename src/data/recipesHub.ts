@@ -1,5 +1,7 @@
 import { recipeLibrary } from './recipeLibrary';
 import { isUserAdminFromMetadata } from '../lib/authFlow';
+import type { SeasonScope } from './mealDatabase';
+import { getCurrentSeason, scoreSeasonPreference } from '../lib/menuEngine';
 
 
 export type RecipeMealTime = 'matin' | 'midi' | 'soir' | 'collation';
@@ -18,6 +20,8 @@ export type RecipeCatalogItem = {
   steps: string[];
   tags: string[];
   tips?: string[];
+  /** Saisons d’affinité ; `all` = intemporel. Défaut : tout le catalogue sans champ est traité comme `['all']`. */
+  season?: SeasonScope[];
   isFeatured?: boolean;
   isRecipeOfDay?: boolean;
   isPublished: boolean;
@@ -49,7 +53,8 @@ const baseRecipes: RecipeCatalogItem[] = recipeLibrary.slice(0, 8).map((r, idx) 
   ingredients: r.ingredients,
   steps: r.steps,
   tags: r.tags,
-  tips: ['Tu peux ajuster les épices selon tes envies du jour.'],
+  tips: [],
+  season: r.season ?? ['all'],
   isFeatured: idx === 0,
   isRecipeOfDay: idx === 1,
   isPublished: true,
@@ -79,6 +84,10 @@ export function listRecipesForApp(): RecipeCatalogItem[] {
     .sort((a, b) => {
       if (a.isFeatured && !b.isFeatured) return -1;
       if (!a.isFeatured && b.isFeatured) return 1;
+      const cal = getCurrentSeason();
+      const sa = scoreSeasonPreference(a.season ?? ['all'], cal);
+      const sb = scoreSeasonPreference(b.season ?? ['all'], cal);
+      if (sa !== sb) return sb - sa;
       return b.updatedAt.localeCompare(a.updatedAt);
     });
 }
@@ -95,7 +104,12 @@ export function getRecipeOfDay(
     Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) /
       (1000 * 60 * 60 * 24),
   );
-  return recipes[daySeed % recipes.length];
+  const currentSeason = getCurrentSeason(now);
+  const preferred = recipes.filter(
+    (r) => scoreSeasonPreference(r.season ?? ['all'], currentSeason) >= 6,
+  );
+  const pool = preferred.length ? preferred : recipes;
+  return pool[daySeed % pool.length];
 }
 
 
@@ -127,6 +141,7 @@ export function createEmptyAdminRecipe(): RecipeCatalogItem {
     steps: [],
     tags: [],
     tips: [],
+    season: ['all'],
     isFeatured: false,
     isRecipeOfDay: false,
     isPublished: true,

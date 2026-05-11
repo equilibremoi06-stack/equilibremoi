@@ -1,3 +1,5 @@
+import type { SeasonScope } from './mealDatabase';
+
 export type RecipeIngredient = {
   name: string;
   amount: string;
@@ -12,6 +14,8 @@ export type RecipeLibraryItem = {
   ingredients: RecipeIngredient[];
   steps: string[];
   premiumOnly?: boolean;
+  /** Saisons d’affinité ; `all` = intemporel. Défaut traité comme `['all']` côté app. */
+  season?: SeasonScope[];
 };
 
 export type Recipe = RecipeLibraryItem;
@@ -21,6 +25,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "breakfast-1",
       title: "Bowl yaourt fruits rouges",
       tags: ["leger", "protein"],
+      season: ['spring', 'summer', 'autumn'],
       prepMinutes: 10,
       ingredients: [
         { name: "Yaourt grec", amount: "150g", everydayEquivalent: "1 pot" },
@@ -37,6 +42,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "breakfast-2",
       title: "Tartines avocat œuf",
       tags: ["protein", "leger"],
+      season: ['all'],
       prepMinutes: 15,
       ingredients: [
         { name: "Pain complet", amount: "2 tranches" },
@@ -53,6 +59,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "lunch-1",
       title: "Salade poulet quinoa",
       tags: ["protein", "leger"],
+      season: ['spring', 'summer'],
       prepMinutes: 25,
       ingredients: [
         { name: "Quinoa", amount: "100g" },
@@ -69,6 +76,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "lunch-2",
       title: "Wrap végétarien au houmous",
       tags: ["vegetarien", "petit-budget"],
+      season: ['spring', 'summer'],
       prepMinutes: 15,
       ingredients: [
         { name: "Galette de blé", amount: "1" },
@@ -85,6 +93,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "lunch-3",
       title: "Pâtes complètes thon tomate",
       tags: ["petit-budget", "protein"],
+      season: ['all'],
       prepMinutes: 20,
       ingredients: [
         { name: "Pâtes complètes", amount: "100g" },
@@ -101,6 +110,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "dinner-1",
       title: "Soupe légumes maison",
       tags: ["vegetarien", "leger", "petit-budget"],
+      season: ['autumn', 'winter', 'spring'],
       prepMinutes: 30,
       ingredients: [
         { name: "Carottes", amount: "2" },
@@ -117,6 +127,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "dinner-2",
       title: "Saumon riz brocolis",
       tags: ["protein", "leger"],
+      season: ['all'],
       prepMinutes: 25,
       ingredients: [
         { name: "Saumon", amount: "120g" },
@@ -133,6 +144,7 @@ export const recipeLibrary: RecipeLibraryItem[] = [
       id: "dinner-3",
       title: "Omelette champignons fromage",
       tags: ["protein", "petit-budget"],
+      season: ['autumn', 'winter', 'spring'],
       prepMinutes: 15,
       ingredients: [
         { name: "Œufs", amount: "3" },
